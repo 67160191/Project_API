@@ -6,12 +6,17 @@ const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
 const pool = require("./db");
 const { getWeatherWithResilience } = require("./services/weatherService");
+const { sendNotification, getNotificationLogs } = require("./services/notificationService");
+const { getTasksAnalytics } = require("./services/analyticsService");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware สำหรับแปลง Request Body เป็น JSON
 app.use(express.json());
+
+// ให้บริการ Static Files สำหรับ Client-Facing Frontend (Phase 3: CLO6)
+app.use(express.static(path.join(__dirname, "public"), { index: false }));
 
 // โหลดไฟล์ OpenAPI Specification สำหรับ Swagger UI
 const swaggerDocument = YAML.load(path.join(__dirname, "openapi.yaml"));
@@ -26,7 +31,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerDocument, {
     customCss: ".swagger-ui .topbar { display: block; }",
-    customSiteTitle: "Task Management API Docs - Phase 2",
+    customSiteTitle: "Task Management API Docs - Phase 3 Final Integration",
   })
 );
 
@@ -36,18 +41,32 @@ app.get("/api-docs.json", (req, res) => {
   res.send(swaggerDocument);
 });
 
-// หน้า Root แนะนำ API และลิงก์ไปยัง Documentation
+// หน้าแอปพลิเคชัน Frontend หลัก (Client-Facing Frontend)
+app.get("/app", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// หน้า Root: ตรวจสอบ Accept header หากเป็น Browser ให้ไปหน้าแอปพลิเคชัน Frontend หากเป็น API ให้ตอบ JSON
 app.get("/", (req, res) => {
+  const acceptHeader = req.headers.accept || "";
+  if (acceptHeader.includes("text/html") && !req.query.json) {
+    return res.sendFile(path.join(__dirname, "public", "index.html"));
+  }
+
   res.status(200).json({
     success: true,
-    message: "Tasks Management API (Phase 2: Docs/DX & Integration) is running",
-    version: "2.0.0",
+    message: "Tasks Management API (Phase 3: Final Integration & Microservices) is running",
+    version: "3.0.0",
+    frontend: `http://localhost:${PORT}/app`,
     documentation: `http://localhost:${PORT}/api-docs`,
     endpoints: {
       tasks: "/api/v1/tasks",
       users: "/api/v1/users",
       tags: "/api/v1/tags",
       weather_integration: "/api/v1/tasks/:id/weather",
+      microservice_analytics: "/api/v1/analytics/summary",
+      microservice_notifications: "/api/v1/notifications/send",
+      microservice_logs: "/api/v1/notifications/logs",
       swagger_ui: "/api-docs",
       openapi_spec: "/api-docs.json",
     },
@@ -130,7 +149,6 @@ app.get("/api/v1/tasks", async (req, res, next) => {
 
     const [rows] = await safeDbQuery(() => pool.query(sql, params));
 
-    // แปลงสตริง tags เป็น Array
     const formattedRows = rows.map((row) => ({
       ...row,
       tags: row.tags ? row.tags.split(", ") : [],
@@ -192,7 +210,6 @@ app.get("/api/v1/tasks/:id", async (req, res, next) => {
       });
     }
 
-    // ดึง Tags ที่ผูกกับงานนี้
     const [tagRows] = await safeDbQuery(() =>
       pool.query(
         `SELECT tg.id, tg.name
@@ -225,7 +242,6 @@ app.post("/api/v1/tasks", async (req, res, next) => {
   try {
     const { title, description, due_date, status = "pending", user_id, tag_ids = [] } = req.body;
 
-    // ตรวจสอบ Validation เบื้องต้น
     if (!title || typeof title !== "string" || title.trim() === "") {
       return res.status(400).json({
         success: false,
@@ -257,7 +273,6 @@ app.post("/api/v1/tasks", async (req, res, next) => {
       });
     }
 
-    // ตรวจสอบว่ามีผู้ใช้งานนี้อยู่จริงหรือไม่
     const [userRows] = await safeDbQuery(() =>
       pool.query("SELECT id, username FROM users WHERE id = ?", [user_id])
     );
@@ -271,7 +286,6 @@ app.post("/api/v1/tasks", async (req, res, next) => {
       });
     }
 
-    // บันทึกลงตาราง tasks
     const [insertResult] = await safeDbQuery(() =>
       pool.query(
         "INSERT INTO tasks (title, description, due_date, status, user_id) VALUES (?, ?, ?, ?, ?)",
@@ -281,7 +295,6 @@ app.post("/api/v1/tasks", async (req, res, next) => {
 
     const newTaskId = insertResult.insertId;
 
-    // หากมีการระบุ tag_ids ให้ผูกความสัมพันธ์ลงตาราง task_tags
     if (Array.isArray(tag_ids) && tag_ids.length > 0) {
       const tagValues = tag_ids.map((tagId) => [newTaskId, tagId]);
       await safeDbQuery(() =>
@@ -334,7 +347,6 @@ app.put("/api/v1/tasks/:id", async (req, res, next) => {
       });
     }
 
-    // ตรวจสอบว่ามีงานนี้อยู่หรือไม่
     const [existing] = await safeDbQuery(() =>
       pool.query("SELECT id FROM tasks WHERE id = ?", [taskId])
     );
@@ -345,7 +357,6 @@ app.put("/api/v1/tasks/:id", async (req, res, next) => {
       });
     }
 
-    // อัปเดตข้อมูลงาน
     await safeDbQuery(() =>
       pool.query(
         "UPDATE tasks SET title = ?, description = ?, due_date = ?, status = ?, user_id = ? WHERE id = ?",
@@ -353,7 +364,6 @@ app.put("/api/v1/tasks/:id", async (req, res, next) => {
       )
     );
 
-    // หากมีการส่ง tag_ids มา ให้อัปเดตตารางเชื่อม
     if (Array.isArray(tag_ids)) {
       await safeDbQuery(() => pool.query("DELETE FROM task_tags WHERE task_id = ?", [taskId]));
       if (tag_ids.length > 0) {
@@ -463,9 +473,7 @@ app.delete("/api/v1/tasks/:id", async (req, res, next) => {
 
 /**
  * 7. GET /api/v1/tasks/:id/weather
- * เชื่อมต่อบริการภายนอก Open-Meteo Weather API เพื่อตรวจสอบสภาพอากาศสำหรับงาน
- * รองรับกลไก Resilience: Timeout (3s), Retry (2 ครั้ง พร้อม Exponential Backoff), Fallback
- * รองรับ Query Parameter ?mockFailure=network|timeout|500 เพื่อจำลองความผิดพลาด
+ * เชื่อมต่อบริการภายนอก Open-Meteo Weather API พร้อมระบบ Resilience (Retry, Timeout, Fallback)
  */
 app.get("/api/v1/tasks/:id/weather", async (req, res, next) => {
   try {
@@ -482,7 +490,6 @@ app.get("/api/v1/tasks/:id/weather", async (req, res, next) => {
     let taskTitle = `Task #${taskId}`;
     let dueDate = null;
 
-    // พยายามค้นหาชื่องานจากฐานข้อมูล (ถ้าฐานข้อมูลพร้อมใช้งาน)
     try {
       const [rows] = await pool.query(
         "SELECT title, DATE_FORMAT(due_date, '%Y-%m-%d') as due_date FROM tasks WHERE id = ?",
@@ -493,11 +500,9 @@ app.get("/api/v1/tasks/:id/weather", async (req, res, next) => {
         dueDate = rows[0].due_date;
       }
     } catch (dbErr) {
-      // หากติดต่อ DB ไม่ได้ อนุโลมให้ทดสอบ Integration ต่อได้โดยไม่บล็อก
       console.warn("[Weather Route] Database offline, continuing with default task context...");
     }
 
-    // เรียกใช้ Weather Service ที่มีระบบ Retry, Timeout และ Fallback สมบูรณ์แบบ
     const weatherResult = await getWeatherWithResilience({
       taskId: taskId,
       city: "Bangkok",
@@ -539,11 +544,79 @@ app.get("/api/v1/weather", async (req, res, next) => {
 });
 
 // -------------------------------------------------------------
-// ส่วนที่ 4: Users & Tags Resources Endpoints
+// ส่วนที่ 4: Microservices Endpoints (สัปดาห์ที่ 13 Integration)
 // -------------------------------------------------------------
 
 /**
- * 9. GET /api/v1/users
+ * 9. GET /api/v1/analytics/summary
+ * Task Analytics & Statistics Microservice
+ */
+app.get("/api/v1/analytics/summary", async (req, res, next) => {
+  try {
+    const analytics = await getTasksAnalytics();
+    res.status(200).json({
+      success: true,
+      ...analytics,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * 10. POST /api/v1/notifications/send
+ * Notification Microservice: ส่งการแจ้งเตือนงาน
+ */
+app.post("/api/v1/notifications/send", async (req, res, next) => {
+  try {
+    const { taskId, recipient, channel, message, subject, priority } = req.body;
+
+    const logEntry = await sendNotification({
+      taskId,
+      recipient,
+      channel,
+      message,
+      subject,
+      priority,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "ส่งการแจ้งเตือนผ่าน Notification Microservice สำเร็จ",
+      data: logEntry,
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: {
+        code: "NOTIFICATION_DISPATCH_FAILED",
+        message: err.message,
+      },
+    });
+  }
+});
+
+/**
+ * 11. GET /api/v1/notifications/logs
+ * Notification Microservice: ดึงประวัติการส่งแจ้งเตือน
+ */
+app.get("/api/v1/notifications/logs", (req, res) => {
+  const { taskId, channel, limit } = req.query;
+  const logs = getNotificationLogs({ taskId, channel, limit });
+
+  res.status(200).json({
+    success: true,
+    total: logs.length,
+    data: logs,
+  });
+});
+
+// -------------------------------------------------------------
+// ส่วนที่ 5: Users & Tags Resources Endpoints
+// -------------------------------------------------------------
+
+/**
+ * 12. GET /api/v1/users
  * ดึงรายชื่อผู้ใช้งานทั้งหมด
  */
 app.get("/api/v1/users", async (req, res, next) => {
@@ -563,7 +636,7 @@ app.get("/api/v1/users", async (req, res, next) => {
 });
 
 /**
- * 10. GET /api/v1/tags
+ * 13. GET /api/v1/tags
  * ดึงรายการป้ายกำกับทั้งหมด
  */
 app.get("/api/v1/tags", async (req, res, next) => {
@@ -583,7 +656,7 @@ app.get("/api/v1/tags", async (req, res, next) => {
 });
 
 /**
- * 11. POST /api/v1/tags
+ * 14. POST /api/v1/tags
  * สร้างป้ายกำกับใหม่
  */
 app.post("/api/v1/tags", async (req, res, next) => {
@@ -621,22 +694,20 @@ app.post("/api/v1/tags", async (req, res, next) => {
 });
 
 // -------------------------------------------------------------
-// ส่วนที่ 5: 404 Route Not Found & Central Error Handler
+// ส่วนที่ 6: 404 Route Not Found & Central Error Handler
 // -------------------------------------------------------------
 
-// จัดการกรณีเรียก Endpoint ที่ไม่มีในระบบ (404)
 app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: {
       code: "ROUTE_NOT_FOUND",
       message: `ไม่พบ Endpoint: ${req.method} ${req.originalUrl}`,
-      suggestion: `สามารถเปิดดูเอกสาร API ทั้งหมดได้ที่ http://localhost:${PORT}/api-docs`,
+      suggestion: `สามารถเปิดดูเอกสาร API ทั้งหมดได้ที่ http://localhost:${PORT}/api-docs หรือเปิดแอปพลิเคชันที่ http://localhost:${PORT}/app`,
     },
   });
 });
 
-// Central Error Handler Middleware (จัดการ Error รวมทั้งหมด)
 app.use((err, req, res, next) => {
   console.error("[ServerError]", err);
 
@@ -650,13 +721,13 @@ app.use((err, req, res, next) => {
   });
 });
 
-// เริ่มต้นเปิด Server หากรันไฟล์นี้โดยตรง
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`🚀 Task Management API Server running at http://localhost:${PORT}`);
-    console.log(`📖 Swagger UI Documentation: http://localhost:${PORT}/api-docs`);
-    console.log(`📄 Raw OpenAPI Spec (JSON):  http://localhost:${PORT}/api-docs.json`);
+    console.log(`🚀 Task Management Unified Server (Phase 3 Final)`);
+    console.log(`🌐 Client Frontend App:      http://localhost:${PORT}/app`);
+    console.log(`📖 Swagger UI Documentation:  http://localhost:${PORT}/api-docs`);
+    console.log(`📄 Raw OpenAPI Spec (JSON):   http://localhost:${PORT}/api-docs.json`);
     console.log(`=======================================================`);
   });
 }

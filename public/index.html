@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow Pro — ระบบจัดการงาน (Phase 3 Final Integration)</title>
+  <!-- Google Fonts: Inter & Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header / Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="logo-icon">✓</div>
+        <div class="brand-text">
+          <h1>TaskFlow Pro</h1>
+          <span class="badge badge-primary">Phase 3: Final Integration</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <a href="/api-docs" target="_blank" class="btn btn-outline" id="navDocsBtn">
+          <span class="icon">📖</span> Swagger API Docs
+        </a>
+        <button class="btn btn-primary" id="openCreateModalBtn">
+          <span class="icon">+</span> สร้างงานใหม่
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Top Alert / Notification Banner -->
+    <div id="globalAlert" class="alert-banner hidden">
+      <div class="alert-content">
+        <span class="alert-icon" id="alertIcon">⚠️</span>
+        <span class="alert-message" id="alertMessage">ข้อความแจ้งเตือน</span>
+      </div>
+      <button class="alert-close" id="alertCloseBtn">&times;</button>
+    </div>
+
+    <!-- Analytics & Weather Metric Strip -->
+    <section class="stats-strip">
+      <div class="stat-card">
+        <div class="stat-title">งานทั้งหมด (Total Tasks)</div>
+        <div class="stat-value" id="statTotal">-</div>
+        <div class="stat-subtitle">อัปเดตแบบเรียลไทม์</div>
+      </div>
+      <div class="stat-card stat-success">
+        <div class="stat-title">เสร็จสิ้นแล้ว (Completed)</div>
+        <div class="stat-value" id="statCompleted">-</div>
+        <div class="stat-subtitle" id="statRate">อัตราสำเร็จ 0%</div>
+      </div>
+      <div class="stat-card stat-warning">
+        <div class="stat-title">กำลังดำเนินการ (In Progress)</div>
+        <div class="stat-value" id="statInProgress">-</div>
+        <div class="stat-subtitle">ติดตามความคืบหน้า</div>
+      </div>
+      <div class="stat-card stat-weather" id="weatherWidget">
+        <div class="stat-title">สภาพอากาศวันนี้ (Bangkok)</div>
+        <div class="stat-value weather-value" id="weatherTemp">--°C</div>
+        <div class="stat-subtitle" id="weatherDesc">กำลังโหลดสภาพอากาศ...</div>
+      </div>
+    </section>
+
+    <!-- Main Content Area: Controls & Filter Tabs -->
+    <section class="board-header">
+      <div class="filter-tabs">
+        <button class="tab-btn active" data-filter="all">ทั้งหมด (<span id="countAll">0</span>)</button>
+        <button class="tab-btn" data-filter="pending">รอดำเนินการ (<span id="countPending">0</span>)</button>
+        <button class="tab-btn" data-filter="in_progress">กำลังทำ (<span id="countInProgress">0</span>)</button>
+        <button class="tab-btn" data-filter="completed">เสร็จสิ้น (<span id="countCompleted">0</span>)</button>
+      </div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="taskSearchInput" placeholder="ค้นหาชื่องานหรือคำอธิบาย...">
+      </div>
+    </section>
+
+    <!-- Loading Spinner & State Indicators -->
+    <div id="loadingIndicator" class="loading-container hidden">
+      <div class="spinner"></div>
+      <p>กำลังเชื่อมต่อ API และโหลดข้อมูล...</p>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorState" class="empty-state hidden">
+      <div class="state-icon">📡</div>
+      <h3>ไม่สามารถดึงข้อมูลจาก API ได้</h3>
+      <p id="errorStateMessage">กรุณาตรวจสอบว่าเซิร์ฟเวอร์ Express และ MySQL กำลังทำงานอยู่</p>
+      <button class="btn btn-primary" id="retryFetchBtn">ลองใหม่อีกครั้ง (Retry)</button>
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state hidden">
+      <div class="state-icon">📋</div>
+      <h3>ไม่พบรายการงานในหมวดหมู่นี้</h3>
+      <p>คุณสามารถเริ่มต้นสร้างงานใหม่ได้โดยกดปุ่ม "สร้างงานใหม่" ด้านบน</p>
+    </div>
+
+    <!-- Tasks Grid Cards -->
+    <section class="tasks-grid" id="tasksGrid">
+      <!-- Task Cards Will Be Injected Here via JavaScript -->
+    </section>
+
+  </main>
+
+  <!-- Modal: สร้างงานใหม่ (Create Task Form Modal) -->
+  <div class="modal-backdrop hidden" id="createTaskModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>สร้างงานใหม่ (Create New Task)</h2>
+        <button class="modal-close" id="closeCreateModalBtn">&times;</button>
+      </div>
+      <form id="createTaskForm" novalidate>
+        <div class="modal-body">
+          <!-- Title Field -->
+          <div class="form-group">
+            <label for="taskTitle">ชื่องาน (Task Title) <span class="required">*</span></label>
+            <input type="text" id="taskTitle" name="title" placeholder="เช่น ทำสรุปรายงานยอดขายประจำสัปดาห์" required>
+            <span class="field-error" id="titleError"></span>
+          </div>
+
+          <!-- Description Field -->
+          <div class="form-group">
+            <label for="taskDescription">รายละเอียดงาน (Description)</label>
+            <textarea id="taskDescription" name="description" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติมของงาน..."></textarea>
+          </div>
+
+          <!-- Due Date & Status Row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taskDueDate">วันครบกำหนด (Due Date)</label>
+              <input type="date" id="taskDueDate" name="due_date">
+              <span class="field-error" id="dueDateError"></span>
+            </div>
+            <div class="form-group">
+              <label for="taskStatus">สถานะเริ่มต้น (Initial Status)</label>
+              <select id="taskStatus" name="status">
+                <option value="pending" selected>รอดำเนินการ (Pending)</option>
+                <option value="in_progress">กำลังดำเนินการ (In Progress)</option>
+                <option value="completed">เสร็จสิ้น (Completed)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Assignee & Tags Row -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taskUserId">ผู้รับผิดชอบ (Assignee) <span class="required">*</span></label>
+              <select id="taskUserId" name="user_id" required>
+                <option value="">-- เลือกผู้รับผิดชอบ --</option>
+                <option value="1">somchai (somchai@example.com)</option>
+                <option value="2">somsri (somsri@example.com)</option>
+                <option value="3">mana (mana@example.com)</option>
+              </select>
+              <span class="field-error" id="userIdError"></span>
+            </div>
+            <div class="form-group">
+              <label>ป้ายกำกับ (Tags)</label>
+              <div class="tags-selector" id="tagsSelector">
+                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="1"> Work</label>
+                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="2"> Personal</label>
+                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="3"> Urgent</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="cancelCreateBtn">ยกเลิก</button>
+          <button type="submit" class="btn btn-primary" id="submitCreateBtn">
+            <span class="spinner-sm hidden" id="submitSpinner"></span>
+            บันทึกงานใหม่
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: ดูข้อมูลสภาพอากาศของงาน (Task Weather Modal) -->
+  <div class="modal-backdrop hidden" id="weatherModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>สภาพอากาศสำหรับงาน (Weather Forecast)</h2>
+        <button class="modal-close" id="closeWeatherModalBtn">&times;</button>
+      </div>
+      <div class="modal-body" id="weatherModalBody">
+        <div class="loading-container">
+          <div class="spinner"></div>
+          <p>กำลังเชื่อมต่อ Open-Meteo Weather API...</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="closeWeatherBtn">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Client Application Script -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -3,28 +3,31 @@ info:
   title: Task Management System API
   description: |
     # เอกสาร API ระบบจัดการงาน (Task Management System)
-    โครงงานระยะที่ 2: เอกสาร API และการเชื่อมต่อภายนอก (Docs/DX & External Integration)
+    โครงงานระยะที่ 3: นำเสนอโครงงาน (Final Integration & Project Defense)
     
-    ### ฟีเจอร์หลักในระบบ:
-    1. **Tasks Resource**: จัดการงาน เพิ่ม อ่าน แก้ไข ลบ เปลี่ยนสถานะ (CRUD)
-    2. **Users & Tags Resources**: จัดการข้อมูลผู้ใช้และหมวดหมู่ป้ายกำกับ
-    3. **External API Integration & Resilience (สัปดาห์ที่ 11)**: เชื่อมต่อบริการสภาพอากาศภายนอก (Open-Meteo API) พร้อมกลไกความทนทาน:
-       - **Retry Logic**: เรียกซ้ำอัตโนมัติ 2 ครั้งพร้อม Exponential Backoff
-       - **Timeout**: ตัดการรอเมื่อเกิน 3,000 ms ด้วย AbortController
-       - **Graceful Fallback**: ส่งมอบข้อมูลสำรองพร้อมคำแนะนำเมื่อภายนอกล้มเหลว
-  version: 2.0.0
+    ### สถาปัตยกรรมและฟีเจอร์ในระบบ:
+    1. **Tasks Resource (Phase 1):** จัดการงาน เพิ่ม อ่าน แก้ไข ลบ เปลี่ยนสถานะ (CRUD)
+    2. **Users & Tags Resources (Phase 1):** จัดการข้อมูลผู้ใช้และหมวดหมู่ป้ายกำกับ
+    3. **External API Resilience Integration (Phase 2):** เชื่อมต่อบริการสภาพอากาศภายนอก (Open-Meteo API) พร้อม Timeout, Retry (Exponential Backoff), และ Graceful Fallback
+    4. **Microservices Integration (Phase 3 / Week 13):**
+       - **Analytics Microservice:** คำนวณสรุปสถิติงาน อัตราสำเร็จ และการกระจายงาน
+       - **Notification Microservice:** จัดการการส่งแจ้งเตือนงานผ่าน Email/SMS/Webhook และบันทึก Dispatch Logs
+    5. **Client-Facing Frontend (Phase 3 / CLO6):** ส่วนติดต่อผู้ใช้ Interactive Web Application ที่เข้าถึงได้ที่ `/app`
+  version: 3.0.0
   contact:
     name: ผู้พัฒนาโครงงาน (รหัสนิสิต 67160191)
     email: 67160191@go.buu.ac.th
 servers:
   - url: http://localhost:3000
-    description: Local Development Server
+    description: Local Unified Server
 
 tags:
   - name: Tasks
     description: การจัดการข้อมูลงาน (CRUD & Status)
   - name: External Integration (Weather)
     description: การเชื่อมต่อบริการภายนอกพร้อมกลไกความทนทาน (Retry, Timeout, Fallback)
+  - name: Microservices
+    description: โมดูล Microservices จากสัปดาห์ที่ 13 (Analytics & Notifications)
   - name: Users
     description: การจัดการข้อมูลผู้ใช้งาน
   - name: Tags
@@ -88,8 +91,8 @@ paths:
             schema:
               $ref: '#/components/schemas/TaskInput'
             example:
-              title: "ส่งรายงานความคืบหน้าโครงงานระยะที่ 2"
-              description: "จัดทำเอกสาร OpenAPI, Swagger UI และเขียนโค้ด Resilience ให้เสร็จสมบูรณ์"
+              title: "ส่งรายงานความคืบหน้าโครงงานระยะที่ 3"
+              description: "รวมโมดูลทั้งหมด ทำ Frontend และเตรียมนำเสนอ Project Defense"
               due_date: "2026-08-30"
               status: "pending"
               user_id: 1
@@ -118,11 +121,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                success: false
-                error:
-                  code: "USER_NOT_FOUND"
-                  message: "ไม่พบผู้ใช้งาน user_id: 99 ในระบบ"
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -179,13 +177,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskInput'
-            example:
-              title: "ส่งรายงานสรุปยอดขายประจำเดือนฉบับแก้ไข"
-              description: "เพิ่มตารางเปรียบเทียบไตรมาสที่ 3 เรียบร้อยแล้ว"
-              due_date: "2026-08-31"
-              status: "in_progress"
-              user_id: 1
-              tag_ids: [1, 2]
       responses:
         '200':
           description: แก้ไขข้อมูลงานสำเร็จ
@@ -213,7 +204,7 @@ paths:
       tags:
         - Tasks
       summary: ลบงานออกจากระบบ (Delete Task)
-      description: ลบงานตาม Task ID ที่ระบุ (ป้ายกำกับที่ผูกไว้จะถูกลบความสัมพันธ์โดยอัตโนมัติ)
+      description: ลบงานตาม Task ID ที่ระบุ
       parameters:
         - name: id
           in: path
@@ -236,8 +227,6 @@ paths:
                   message:
                     type: string
                     example: "ลบงานรหัส 1 เรียบร้อยแล้ว"
-        '400':
-          $ref: '#/components/responses/BadRequestError'
         '404':
           $ref: '#/components/responses/NotFoundError'
         '500':
@@ -248,12 +237,10 @@ paths:
       tags:
         - Tasks
       summary: อัปเดตเฉพาะสถานะของงาน (Update Task Status)
-      description: เปลี่ยนสถานะงาน เช่น จาก pending เป็น completed
       parameters:
         - name: id
           in: path
           required: true
-          description: รหัสประจำงาน (Task ID)
           schema:
             type: integer
             example: 1
@@ -263,8 +250,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TaskStatusUpdate'
-            example:
-              status: "completed"
       responses:
         '200':
           description: อัปเดตสถานะงานสำเร็จ
@@ -279,119 +264,159 @@ paths:
                   message:
                     type: string
                     example: "อัปเดตสถานะงานเป็น 'completed' สำเร็จ"
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      status:
-                        type: string
-                        example: "completed"
         '400':
           $ref: '#/components/responses/BadRequestError'
         '404':
           $ref: '#/components/responses/NotFoundError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/tasks/{id}/weather:
     get:
       tags:
         - External Integration (Weather)
-      summary: ตรวจสอบสภาพอากาศสำหรับงาน (External API Integration with Resilience)
-      description: |
-        เรียกใช้บริการภายนอก Open-Meteo Weather API เพื่อตรวจสอบสภาพอากาศสำหรับวางแผนการทำงาน
-        
-        **กลไกความทนทานต่อความผิดพลาด (Resilience Mechanisms):**
-        - **Timeout (3,000ms):** ตัดการเชื่อมต่อเมื่อรอนานเกินเวลา
-        - **Retry Logic (2 retries / 3 attempts):** เรียกซ้ำอัตโนมัติพร้อม Exponential Backoff (500ms, 1000ms) เมื่อเกิด Network Error หรือรหัส 5xx
-        - **Graceful Fallback:** คืนค่าข้อมูลสำรองที่ปลอดภัย ไม่ทำให้ระบบหยุดทำงาน (isFallback = true)
-        
-        **การจำลอง Failure Scenario เพื่อทดสอบ:**
-        - `mockFailure=network` : จำลอง Unreachable Network / DNS Error
-        - `mockFailure=timeout` : จำลอง Server ช้ากว่า Timeout (ค้างเกิน 3000ms)
-        - `mockFailure=500`     : จำลอง External Server ส่งกลับ 500
+      summary: ตรวจสอบสภาพอากาศสำหรับงาน (External API with Resilience)
+      description: เรียกใช้ Open-Meteo Weather API พร้อม Timeout (3s), Retry 2 ครั้ง (Exponential Backoff), และ Graceful Fallback
       parameters:
         - name: id
           in: path
           required: true
-          description: รหัสประจำงาน (Task ID)
           schema:
             type: integer
             example: 1
         - name: mockFailure
           in: query
           required: false
-          description: ใช้สำหรับจำลองสถานการณ์ความผิดพลาดเพื่อทดสอบ Resilience
           schema:
             type: string
             enum: [network, timeout, '500']
       responses:
         '200':
-          description: ได้รับข้อมูลสภาพอากาศ (อาจเป็นข้อมูลจริง หรือข้อมูล Fallback กรณีบริการภายนอกล้มเหลว)
+          description: ผลลัพธ์สภาพอากาศจริงหรือข้อมูล Fallback
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeatherResponse'
-        '400':
-          $ref: '#/components/responses/BadRequestError'
         '404':
           $ref: '#/components/responses/NotFoundError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
   /api/v1/weather:
     get:
       tags:
         - External Integration (Weather)
       summary: ทดสอบดึงข้อมูลสภาพอากาศและจำลอง Failure Scenarios โดยตรง
-      description: เรียกทดสอบ Weather Integration โดยตรง สามารถระบุพิกัด เมือง หรือโหมดจำลองความผิดพลาดได้
       parameters:
         - name: city
           in: query
-          required: false
-          description: ชื่อเมือง (เช่น Bangkok, Chonburi)
           schema:
             type: string
             example: Bangkok
-        - name: lat
-          in: query
-          required: false
-          description: ละติจูด
-          schema:
-            type: number
-            example: 13.75
-        - name: lon
-          in: query
-          required: false
-          description: ลองจิจูด
-          schema:
-            type: number
-            example: 100.51
         - name: mockFailure
           in: query
-          required: false
-          description: โหมดจำลองความผิดพลาดเพื่อทดสอบ Retry, Timeout และ Fallback
           schema:
             type: string
             enum: [network, timeout, '500']
       responses:
         '200':
-          description: ผลลัพธ์การเรียก Weather API หรือผลการ Fallback
+          description: ผลลัพธ์สภาพอากาศ
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WeatherResponse'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/analytics/summary:
+    get:
+      tags:
+        - Microservices
+      summary: ดึงข้อมูลสรุปสถิติงาน (Task Analytics Microservice)
+      description: โมดูล Microservice จากสัปดาห์ที่ 13 ประมวลผลและคำนวณอัตราความสำเร็จ (Completion Rate), จำนวนงานที่เสร็จ, งานที่ค้าง และประสิทธิภาพรวม
+      responses:
+        '200':
+          description: สรุปสถิติภาพรวมสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  summary:
+                    type: object
+                    properties:
+                      totalTasks: { type: integer, example: 4 }
+                      completedTasks: { type: integer, example: 1 }
+                      pendingTasks: { type: integer, example: 2 }
+                      inProgressTasks: { type: integer, example: 1 }
+                      completionRatePercent: { type: integer, example: 25 }
+                  performanceScore:
+                    type: string
+                    example: "Needs Attention"
+                  microserviceVersion:
+                    type: string
+                    example: "1.2.0"
+
+  /api/v1/notifications/send:
+    post:
+      tags:
+        - Microservices
+      summary: ส่งการแจ้งเตือนงาน (Notification Microservice)
+      description: โมดูล Microservice สำหรับส่งการแจ้งเตือนงานผ่าน Email, SMS หรือ Webhook พร้อมจัดเก็บบันทึกประวัติการส่ง
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [taskId, recipient, message]
+              properties:
+                taskId: { type: integer, example: 1 }
+                recipient: { type: string, example: "somchai@example.com" }
+                channel: { type: string, enum: [email, sms, webhook], default: email, example: "email" }
+                subject: { type: string, example: "แจ้งเตือนงานใกล้ครบกำหนด" }
+                message: { type: string, example: "กรุณาส่งรายงานภายในวันพรุ่งนี้" }
+                priority: { type: string, enum: [normal, high, urgent], default: normal, example: "high" }
+      responses:
+        '201':
+          description: ส่งการแจ้งเตือนสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "ส่งการแจ้งเตือนผ่าน Notification Microservice สำเร็จ" }
+                  data: { type: object }
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+
+  /api/v1/notifications/logs:
+    get:
+      tags:
+        - Microservices
+      summary: ดึงประวัติการส่งการแจ้งเตือน (Notification Logs)
+      parameters:
+        - name: taskId
+          in: query
+          schema: { type: integer }
+        - name: channel
+          in: query
+          schema: { type: string, enum: [email, sms, webhook] }
+      responses:
+        '200':
+          description: ดึงรายการประวัติสำเร็จ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean, example: true }
+                  total: { type: integer, example: 2 }
+                  data: { type: array, items: { type: object } }
 
   /api/v1/users:
     get:
       tags:
         - Users
-      summary: ดึงรายชื่อผู้ใช้งานทั้งหมด (List Users)
-      description: ดึงข้อมูลผู้ใช้ทั้งหมดในระบบ เพื่อนำไปเลือกเป็นเจ้าของงาน (owner)
+      summary: ดึงรายชื่อผู้ใช้งานทั้งหมด
       responses:
         '200':
           description: ดึงข้อมูลผู้ใช้สำเร็จ
@@ -400,25 +425,15 @@ paths:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-                  total:
-                    type: integer
-                    example: 3
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/User'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                  success: { type: boolean, example: true }
+                  total: { type: integer, example: 3 }
+                  data: { type: array, items: { $ref: '#/components/schemas/User' } }
 
   /api/v1/tags:
     get:
       tags:
         - Tags
-      summary: ดึงรายการป้ายกำกับทั้งหมด (List Tags)
-      description: ดึงรายการหมวดหมู่และป้ายกำกับทั้งหมดที่มีในระบบ
+      summary: ดึงรายการป้ายกำกับทั้งหมด
       responses:
         '200':
           description: ดึงรายการป้ายกำกับสำเร็จ
@@ -427,32 +442,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-                  total:
-                    type: integer
-                    example: 3
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Tag'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+                  success: { type: boolean, example: true }
+                  total: { type: integer, example: 3 }
+                  data: { type: array, items: { $ref: '#/components/schemas/Tag' } }
 
     post:
       tags:
         - Tags
-      summary: สร้างป้ายกำกับใหม่ (Create Tag)
-      description: เพิ่มป้ายกำกับใหม่สำหรับนำไปติดกับงาน
+      summary: สร้างป้ายกำกับใหม่
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/TagInput'
-            example:
-              name: "Urgent"
       responses:
         '201':
           description: สร้างป้ายกำกับใหม่สำเร็จ
@@ -461,269 +464,117 @@ paths:
               schema:
                 type: object
                 properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: "สร้างป้ายกำกับใหม่สำเร็จ"
-                  data:
-                    $ref: '#/components/schemas/Tag'
+                  success: { type: boolean, example: true }
+                  message: { type: string, example: "สร้างป้ายกำกับใหม่สำเร็จ" }
+                  data: { $ref: '#/components/schemas/Tag' }
         '400':
           $ref: '#/components/responses/BadRequestError'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
 
 components:
   schemas:
     Task:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        title:
-          type: string
-          example: "ทำรายงานสรุปประจำเดือน"
-        description:
-          type: string
-          example: "สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า"
-        due_date:
-          type: string
-          format: date
-          example: "2026-08-31"
-        status:
-          type: string
-          enum: [pending, in_progress, completed, cancelled]
-          example: "in_progress"
-        owner:
-          type: string
-          example: "somchai"
-        user_id:
-          type: integer
-          example: 1
-        tags:
-          type: array
-          items:
-            type: string
-          example: ["Work", "Urgent"]
+        id: { type: integer, example: 1 }
+        title: { type: string, example: "ทำรายงานสรุปประจำเดือน" }
+        description: { type: string, example: "สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า" }
+        due_date: { type: string, format: date, example: "2026-08-31" }
+        status: { type: string, enum: [pending, in_progress, completed, cancelled], example: "in_progress" }
+        owner: { type: string, example: "somchai" }
+        user_id: { type: integer, example: 1 }
+        tags: { type: array, items: { type: string }, example: ["Work", "Urgent"] }
 
     TaskDetail:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        title:
-          type: string
-          example: "ทำรายงานสรุปประจำเดือน"
-        description:
-          type: string
-          example: "สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า"
-        due_date:
-          type: string
-          format: date
-          example: "2026-08-31"
-        status:
-          type: string
-          example: "in_progress"
-        owner:
-          type: string
-          example: "somchai"
-        owner_email:
-          type: string
-          example: "somchai@example.com"
-        user_id:
-          type: integer
-          example: 1
-        created_at:
-          type: string
-          format: date-time
-          example: "2026-08-20T10:00:00.000Z"
-        tags:
-          type: array
-          items:
-            $ref: '#/components/schemas/Tag'
+        id: { type: integer, example: 1 }
+        title: { type: string, example: "ทำรายงานสรุปประจำเดือน" }
+        description: { type: string, example: "สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า" }
+        due_date: { type: string, format: date, example: "2026-08-31" }
+        status: { type: string, example: "in_progress" }
+        owner: { type: string, example: "somchai" }
+        owner_email: { type: string, example: "somchai@example.com" }
+        user_id: { type: integer, example: 1 }
+        created_at: { type: string, format: date-time, example: "2026-08-20T10:00:00.000Z" }
+        tags: { type: array, items: { $ref: '#/components/schemas/Tag' } }
 
     TaskInput:
       type: object
-      required:
-        - title
-        - user_id
+      required: [title, user_id]
       properties:
-        title:
-          type: string
-          description: ชื่อหัวข้องาน
-          example: "เตรียมพรีเซนต์โปรเจกต์"
-        description:
-          type: string
-          description: รายละเอียดงาน
-          example: "ทำสไลด์สำหรับประชุมทีมเช้าวันจันทร์"
-        due_date:
-          type: string
-          format: date
-          description: วันกำหนดเสร็จสิ้น (YYYY-MM-DD)
-          example: "2026-08-25"
-        status:
-          type: string
-          enum: [pending, in_progress, completed, cancelled]
-          default: pending
-          example: "pending"
-        user_id:
-          type: integer
-          description: รหัสผู้ใช้ที่เป็นเจ้าของงาน
-          example: 3
-        tag_ids:
-          type: array
-          items:
-            type: integer
-          description: รายการรหัสป้ายกำกับที่ต้องการผูกกับงาน
-          example: [1, 3]
+        title: { type: string, example: "เตรียมพรีเซนต์โปรเจกต์" }
+        description: { type: string, example: "ทำสไลด์สำหรับประชุมทีมเช้าวันจันทร์" }
+        due_date: { type: string, format: date, example: "2026-08-25" }
+        status: { type: string, enum: [pending, in_progress, completed, cancelled], default: pending, example: "pending" }
+        user_id: { type: integer, example: 3 }
+        tag_ids: { type: array, items: { type: integer }, example: [1, 3] }
 
     TaskStatusUpdate:
       type: object
-      required:
-        - status
+      required: [status]
       properties:
-        status:
-          type: string
-          enum: [pending, in_progress, completed, cancelled]
-          description: สถานะใหม่ของงาน
-          example: "completed"
+        status: { type: string, enum: [pending, in_progress, completed, cancelled], example: "completed" }
 
     User:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        username:
-          type: string
-          example: "somchai"
-        email:
-          type: string
-          example: "somchai@example.com"
-        created_at:
-          type: string
-          format: date-time
-          example: "2026-08-20T08:00:00.000Z"
+        id: { type: integer, example: 1 }
+        username: { type: string, example: "somchai" }
+        email: { type: string, example: "somchai@example.com" }
+        created_at: { type: string, format: date-time, example: "2026-08-20T08:00:00.000Z" }
 
     Tag:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
-        name:
-          type: string
-          example: "Work"
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Work" }
 
     TagInput:
       type: object
-      required:
-        - name
+      required: [name]
       properties:
-        name:
-          type: string
-          description: ชื่อป้ายกำกับ (ต้องไม่ซ้ำ)
-          example: "Finance"
+        name: { type: string, example: "Finance" }
 
     WeatherResponse:
       type: object
       properties:
-        success:
-          type: boolean
-          example: true
-        isFallback:
-          type: boolean
-          description: ระบุว่าข้อมูลนี้เป็นข้อมูล Fallback หรือข้อมูลจริงจาก API ภายนอก
-          example: false
-        message:
-          type: string
-          example: "ดึงข้อมูลสภาพอากาศจากผู้ให้บริการภายนอกสำเร็จ"
-        taskId:
-          type: integer
-          example: 1
+        success: { type: boolean, example: true }
+        isFallback: { type: boolean, example: false }
+        message: { type: string, example: "ดึงข้อมูลสภาพอากาศจากผู้ให้บริการภายนอกสำเร็จ" }
+        taskId: { type: integer, example: 1 }
         location:
           type: object
           properties:
-            city:
-              type: string
-              example: "Bangkok"
-            latitude:
-              type: number
-              example: 13.75
-            longitude:
-              type: number
-              example: 100.51
+            city: { type: string, example: "Bangkok" }
+            latitude: { type: number, example: 13.75 }
+            longitude: { type: number, example: 100.51 }
         weather:
           type: object
           properties:
-            status:
-              type: string
-              example: "AVAILABLE"
-            condition:
-              type: string
-              example: "ท้องฟ้าแจ่มใส (Clear Sky)"
-            weather_code:
-              type: integer
-              example: 0
-            temperature_celsius:
-              type: number
-              example: 32.5
-            windspeed_kmh:
-              type: number
-              example: 12.0
-            recommendation:
-              type: string
-              example: "สภาพอากาศดีเยี่ยม เหมาะสำหรับการเดินทางและกิจกรรมกลางแจ้ง"
-            is_outdoor_suitable:
-              type: boolean
-              example: true
+            status: { type: string, example: "AVAILABLE" }
+            condition: { type: string, example: "ท้องฟ้าแจ่มใส (Clear Sky)" }
+            temperature_celsius: { type: number, example: 32.5 }
+            windspeed_kmh: { type: number, example: 12.0 }
+            recommendation: { type: string, example: "สภาพอากาศดีเยี่ยม เหมาะสำหรับการเดินทางและกิจกรรมกลางแจ้ง" }
+            is_outdoor_suitable: { type: boolean, example: true }
         resilienceMeta:
           type: object
           properties:
-            provider:
-              type: string
-              example: "Open-Meteo API"
-            status:
-              type: string
-              example: "SUCCESS"
-            attemptsMade:
-              type: integer
-              example: 1
-            maxRetries:
-              type: integer
-              example: 2
-            timeoutMs:
-              type: integer
-              example: 3000
-            retried:
-              type: boolean
-              example: false
-            errorReason:
-              type: string
-              example: null
+            provider: { type: string, example: "Open-Meteo API" }
+            status: { type: string, example: "SUCCESS" }
+            attemptsMade: { type: integer, example: 1 }
+            maxRetries: { type: integer, example: 2 }
+            timeoutMs: { type: integer, example: 3000 }
 
     ErrorResponse:
       type: object
       properties:
-        success:
-          type: boolean
-          example: false
+        success: { type: boolean, example: false }
         error:
           type: object
           properties:
-            code:
-              type: string
-              example: "VALIDATION_ERROR"
-            message:
-              type: string
-              example: "ข้อมูลที่ส่งมาไม่ถูกต้องหรือไม่ครบถ้วน"
-            details:
-              type: array
-              items:
-                type: string
+            code: { type: string, example: "VALIDATION_ERROR" }
+            message: { type: string, example: "ข้อมูลที่ส่งมาไม่ถูกต้องหรือไม่ครบถ้วน" }
 
   responses:
     BadRequestError:
@@ -732,11 +583,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            error:
-              code: "BAD_REQUEST"
-              message: "ข้อมูลที่ส่งมาไม่ถูกต้องหรือไม่ครบถ้วน"
 
     NotFoundError:
       description: ไม่พบข้อมูลที่ต้องการ (404 Not Found)
@@ -744,11 +590,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            error:
-              code: "NOT_FOUND"
-              message: "ไม่พบทรัพยากรที่ระบุ"
 
     InternalServerError:
       description: เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์ (500 Internal Server Error)
@@ -756,8 +597,3 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            success: false
-            error:
-              code: "INTERNAL_SERVER_ERROR"
-              message: "เกิดข้อผิดพลาดในการประมวลผลคำขอ"
