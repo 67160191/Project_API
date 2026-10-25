@@ -1,5 +1,8 @@
+-- ตั้งค่า Character Set สำหรับการรองรับภาษาไทย
+SET NAMES utf8mb4;
+
 -- สร้างฐานข้อมูล (ถ้ายังไม่มี) และเลือกใช้งาน
-CREATE DATABASE IF NOT EXISTS task_management;
+CREATE DATABASE IF NOT EXISTS task_management CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE task_management;
 
 -- ลบตารางหากมีอยู่แล้ว (เรียงลำดับการลบจากตารางลูกไปยังตารางแม่เพื่อหลีกเลี่ยง error)

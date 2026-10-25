@@ -1,3 +1,6 @@
+-- ตั้งค่า Character Set สำหรับการรองรับภาษาไทย
+SET NAMES utf8mb4;
+
 USE task_management;
 
 -- ลบข้อมูลเก่าก่อน (ถ้ามี) เพื่อให้สามารถรันซ้ำได้โดยไม่ติด duplicate

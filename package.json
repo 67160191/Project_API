@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --coverage --detectOpenHandles --forceExit"
+    "test": "jest --coverage --detectOpenHandles --forceExit",
+    "migrate": "node scripts/migrate.js"
   },
   "keywords": [],
   "author": "",

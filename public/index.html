@@ -1,147 +1,272 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow Pro — ระบบจัดการงาน (Phase 3 Final Integration)</title>
+  <title>TaskFlow Pro — ระบบจัดการงานและติดตามสถานะ</title>
+
   <!-- Google Fonts: Inter & Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <!-- Header / Navigation Bar -->
+
+  <!-- Top Navigation Bar -->
   <header class="navbar">
     <div class="nav-container">
       <div class="brand">
-        <div class="logo-icon">✓</div>
-        <div class="brand-text">
-          <h1>TaskFlow Pro</h1>
-          <span class="badge badge-primary">Phase 3: Final Integration</span>
+        <div class="brand-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <span class="brand-name">TaskFlow</span>
         </div>
       </div>
+
       <div class="nav-actions">
-        <a href="/api-docs" target="_blank" class="btn btn-outline" id="navDocsBtn">
-          <span class="icon">📖</span> Swagger API Docs
+        <a href="/api-docs" target="_blank" class="btn btn-secondary" id="navDocsBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <span>Swagger API</span>
         </a>
         <button class="btn btn-primary" id="openCreateModalBtn">
-          <span class="icon">+</span> สร้างงานใหม่
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>สร้างงานใหม่</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Container -->
-  <main class="container">
-
-    <!-- Top Alert / Notification Banner -->
-    <div id="globalAlert" class="alert-banner hidden">
-      <div class="alert-content">
-        <span class="alert-icon" id="alertIcon">⚠️</span>
-        <span class="alert-message" id="alertMessage">ข้อความแจ้งเตือน</span>
-      </div>
-      <button class="alert-close" id="alertCloseBtn">&times;</button>
+  <!-- Global Alert Banner -->
+  <div id="globalAlert" class="alert-banner hidden">
+    <div class="alert-content">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" id="alertIcon">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+      <span class="alert-message" id="alertMessage">ข้อความแจ้งเตือน</span>
     </div>
+    <button class="alert-close" id="alertCloseBtn" aria-label="ปิดการแจ้งเตือน">&times;</button>
+  </div>
 
-    <!-- Analytics & Weather Metric Strip -->
-    <section class="stats-strip">
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- Metrics & Statistics Section -->
+    <section class="stats-grid">
+      <!-- Total Tasks Card -->
       <div class="stat-card">
-        <div class="stat-title">งานทั้งหมด (Total Tasks)</div>
-        <div class="stat-value" id="statTotal">-</div>
-        <div class="stat-subtitle">อัปเดตแบบเรียลไทม์</div>
+        <div class="stat-header">
+          <span class="stat-label">งานทั้งหมด</span>
+          <div class="stat-icon-wrapper stat-icon-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-body">
+          <span class="stat-number" id="statTotal">-</span>
+          <span class="stat-subtext">รายการทั้งหมดในระบบ</span>
+        </div>
       </div>
-      <div class="stat-card stat-success">
-        <div class="stat-title">เสร็จสิ้นแล้ว (Completed)</div>
-        <div class="stat-value" id="statCompleted">-</div>
-        <div class="stat-subtitle" id="statRate">อัตราสำเร็จ 0%</div>
+
+      <!-- Completed Tasks Card -->
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">เสร็จสิ้นแล้ว</span>
+          <div class="stat-icon-wrapper stat-icon-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-body">
+          <span class="stat-number text-green" id="statCompleted">-</span>
+          <span class="stat-subtext" id="statRate">อัตราสำเร็จ 0%</span>
+        </div>
       </div>
-      <div class="stat-card stat-warning">
-        <div class="stat-title">กำลังดำเนินการ (In Progress)</div>
-        <div class="stat-value" id="statInProgress">-</div>
-        <div class="stat-subtitle">ติดตามความคืบหน้า</div>
+
+      <!-- In Progress Card -->
+      <div class="stat-card">
+        <div class="stat-header">
+          <span class="stat-label">กำลังดำเนินการ</span>
+          <div class="stat-icon-wrapper stat-icon-amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-body">
+          <span class="stat-number text-amber" id="statInProgress">-</span>
+          <span class="stat-subtext">งานที่อยู่ในขั้นตอนปฏิบัติ</span>
+        </div>
       </div>
-      <div class="stat-card stat-weather" id="weatherWidget">
-        <div class="stat-title">สภาพอากาศวันนี้ (Bangkok)</div>
-        <div class="stat-value weather-value" id="weatherTemp">--°C</div>
-        <div class="stat-subtitle" id="weatherDesc">กำลังโหลดสภาพอากาศ...</div>
+
+      <!-- Weather Integration Widget -->
+      <div class="stat-card stat-card-weather" id="weatherWidget">
+        <div class="stat-header">
+          <span class="stat-label">สภาพอากาศ (Bangkok)</span>
+          <div class="stat-icon-wrapper stat-icon-sky">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="stat-body">
+          <div class="weather-temp-row">
+            <span class="stat-number" id="weatherTemp">--°C</span>
+          </div>
+          <span class="stat-subtext" id="weatherDesc">กำลังเชื่อมต่อข้อมูลสภาพอากาศ...</span>
+        </div>
       </div>
     </section>
 
-    <!-- Main Content Area: Controls & Filter Tabs -->
-    <section class="board-header">
-      <div class="filter-tabs">
-        <button class="tab-btn active" data-filter="all">ทั้งหมด (<span id="countAll">0</span>)</button>
-        <button class="tab-btn" data-filter="pending">รอดำเนินการ (<span id="countPending">0</span>)</button>
-        <button class="tab-btn" data-filter="in_progress">กำลังทำ (<span id="countInProgress">0</span>)</button>
-        <button class="tab-btn" data-filter="completed">เสร็จสิ้น (<span id="countCompleted">0</span>)</button>
+    <!-- Controls Toolbar (Search & Filter Tabs) -->
+    <section class="toolbar">
+      <!-- Filter Tabs / Segmented Control -->
+      <div class="segmented-control" role="tablist">
+        <button class="tab-btn active" data-filter="all" role="tab">
+          <span>ทั้งหมด</span>
+          <span class="tab-badge" id="countAll">0</span>
+        </button>
+        <button class="tab-btn" data-filter="pending" role="tab">
+          <span class="tab-dot dot-pending"></span>
+          <span>รอดำเนินการ</span>
+          <span class="tab-badge" id="countPending">0</span>
+        </button>
+        <button class="tab-btn" data-filter="in_progress" role="tab">
+          <span class="tab-dot dot-in_progress"></span>
+          <span>กำลังดำเนินการ</span>
+          <span class="tab-badge" id="countInProgress">0</span>
+        </button>
+        <button class="tab-btn" data-filter="completed" role="tab">
+          <span class="tab-dot dot-completed"></span>
+          <span>เสร็จสิ้น</span>
+          <span class="tab-badge" id="countCompleted">0</span>
+        </button>
       </div>
-      <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="taskSearchInput" placeholder="ค้นหาชื่องานหรือคำอธิบาย...">
+
+      <!-- Search Input -->
+      <div class="search-input-wrapper">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="taskSearchInput" placeholder="ค้นหาชื่องาน, รายละเอียด หรือผู้รับผิดชอบ...">
       </div>
     </section>
 
-    <!-- Loading Spinner & State Indicators -->
-    <div id="loadingIndicator" class="loading-container hidden">
+    <!-- Loading State -->
+    <div id="loadingIndicator" class="state-container hidden">
       <div class="spinner"></div>
-      <p>กำลังเชื่อมต่อ API และโหลดข้อมูล...</p>
+      <p class="state-title">กำลังดึงข้อมูลงานจากฐานข้อมูล...</p>
     </div>
 
     <!-- Error State -->
-    <div id="errorState" class="empty-state hidden">
-      <div class="state-icon">📡</div>
-      <h3>ไม่สามารถดึงข้อมูลจาก API ได้</h3>
-      <p id="errorStateMessage">กรุณาตรวจสอบว่าเซิร์ฟเวอร์ Express และ MySQL กำลังทำงานอยู่</p>
-      <button class="btn btn-primary" id="retryFetchBtn">ลองใหม่อีกครั้ง (Retry)</button>
+    <div id="errorState" class="state-container hidden">
+      <div class="state-icon-circle state-icon-red">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3 class="state-title">ไม่สามารถเชื่อมต่อ API ได้</h3>
+      <p class="state-desc" id="errorStateMessage">กรุณาตรวจสอบว่าเซิร์ฟเวอร์ Express และ Docker MySQL กำลังทำงานอยู่
+      </p>
+      <button class="btn btn-secondary" id="retryFetchBtn">ลองใหม่อีกครั้ง</button>
     </div>
 
     <!-- Empty State -->
-    <div id="emptyState" class="empty-state hidden">
-      <div class="state-icon">📋</div>
-      <h3>ไม่พบรายการงานในหมวดหมู่นี้</h3>
-      <p>คุณสามารถเริ่มต้นสร้างงานใหม่ได้โดยกดปุ่ม "สร้างงานใหม่" ด้านบน</p>
+    <div id="emptyState" class="state-container hidden">
+      <div class="state-icon-circle state-icon-gray">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+      </div>
+      <h3 class="state-title">ไม่พบรายการงานในหมวดหมู่นี้</h3>
+      <p class="state-desc">ไม่มีงานที่ตรงกับเงื่อนไขการค้นหา คุณสามารถกดปุ่มสร้างงานใหม่เพื่อเพิ่มงานได้ทันที</p>
     </div>
 
     <!-- Tasks Grid Cards -->
     <section class="tasks-grid" id="tasksGrid">
-      <!-- Task Cards Will Be Injected Here via JavaScript -->
+      <!-- Task Cards Injected via JavaScript -->
     </section>
 
   </main>
 
-  <!-- Modal: สร้างงานใหม่ (Create Task Form Modal) -->
+  <!-- Create Task Modal -->
   <div class="modal-backdrop hidden" id="createTaskModal">
-    <div class="modal">
+    <div class="modal-dialog">
       <div class="modal-header">
-        <h2>สร้างงานใหม่ (Create New Task)</h2>
-        <button class="modal-close" id="closeCreateModalBtn">&times;</button>
+        <div>
+          <h2 class="modal-title">สร้างงานใหม่</h2>
+          <p class="modal-subtitle">กรอกข้อมูลงานเพื่อเพิ่มลงในระบบฐานข้อมูล</p>
+        </div>
+        <button class="btn-close" id="closeCreateModalBtn" aria-label="ปิด">&times;</button>
       </div>
+
       <form id="createTaskForm" novalidate>
         <div class="modal-body">
-          <!-- Title Field -->
+          <!-- Task Title -->
           <div class="form-group">
-            <label for="taskTitle">ชื่องาน (Task Title) <span class="required">*</span></label>
-            <input type="text" id="taskTitle" name="title" placeholder="เช่น ทำสรุปรายงานยอดขายประจำสัปดาห์" required>
+            <label for="taskTitle" class="form-label">ชื่องาน <span class="required">*</span></label>
+            <input type="text" id="taskTitle" name="title" class="form-input"
+              placeholder="เช่น ทำรายงานสรุปยอดขายประจำสัปดาห์" required>
             <span class="field-error" id="titleError"></span>
           </div>
 
-          <!-- Description Field -->
+          <!-- Task Description -->
           <div class="form-group">
-            <label for="taskDescription">รายละเอียดงาน (Description)</label>
-            <textarea id="taskDescription" name="description" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติมของงาน..."></textarea>
+            <label for="taskDescription" class="form-label">รายละเอียดงาน</label>
+            <textarea id="taskDescription" name="description" class="form-textarea" rows="3"
+              placeholder="ระบุรายละเอียดเพิ่มเติม หรือเป้าหมายของงาน..."></textarea>
           </div>
 
           <!-- Due Date & Status Row -->
           <div class="form-row">
             <div class="form-group">
-              <label for="taskDueDate">วันครบกำหนด (Due Date)</label>
-              <input type="date" id="taskDueDate" name="due_date">
+              <label for="taskDueDate" class="form-label">วันครบกำหนด</label>
+              <input type="date" id="taskDueDate" name="due_date" class="form-input">
               <span class="field-error" id="dueDateError"></span>
             </div>
             <div class="form-group">
-              <label for="taskStatus">สถานะเริ่มต้น (Initial Status)</label>
-              <select id="taskStatus" name="status">
+              <label for="taskStatus" class="form-label">สถานะเริ่มต้น</label>
+              <select id="taskStatus" name="status" class="form-select">
                 <option value="pending" selected>รอดำเนินการ (Pending)</option>
                 <option value="in_progress">กำลังดำเนินการ (In Progress)</option>
                 <option value="completed">เสร็จสิ้น (Completed)</option>
@@ -152,8 +277,8 @@
           <!-- Assignee & Tags Row -->
           <div class="form-row">
             <div class="form-group">
-              <label for="taskUserId">ผู้รับผิดชอบ (Assignee) <span class="required">*</span></label>
-              <select id="taskUserId" name="user_id" required>
+              <label for="taskUserId" class="form-label">ผู้รับผิดชอบ <span class="required">*</span></label>
+              <select id="taskUserId" name="user_id" class="form-select" required>
                 <option value="">-- เลือกผู้รับผิดชอบ --</option>
                 <option value="1">somchai (somchai@example.com)</option>
                 <option value="2">somsri (somsri@example.com)</option>
@@ -161,43 +286,56 @@
               </select>
               <span class="field-error" id="userIdError"></span>
             </div>
+
             <div class="form-group">
-              <label>ป้ายกำกับ (Tags)</label>
+              <label class="form-label">ป้ายกำกับ (Tags)</label>
               <div class="tags-selector" id="tagsSelector">
-                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="1"> Work</label>
-                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="2"> Personal</label>
-                <label class="tag-checkbox"><input type="checkbox" name="tag_ids" value="3"> Urgent</label>
+                <label class="tag-checkbox-pill">
+                  <input type="checkbox" name="tag_ids" value="1">
+                  <span>Work</span>
+                </label>
+                <label class="tag-checkbox-pill">
+                  <input type="checkbox" name="tag_ids" value="2">
+                  <span>Personal</span>
+                </label>
+                <label class="tag-checkbox-pill">
+                  <input type="checkbox" name="tag_ids" value="3">
+                  <span>Urgent</span>
+                </label>
               </div>
             </div>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline" id="cancelCreateBtn">ยกเลิก</button>
+          <button type="button" class="btn btn-secondary" id="cancelCreateBtn">ยกเลิก</button>
           <button type="submit" class="btn btn-primary" id="submitCreateBtn">
             <span class="spinner-sm hidden" id="submitSpinner"></span>
-            บันทึกงานใหม่
+            <span>บันทึกงาน</span>
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal: ดูข้อมูลสภาพอากาศของงาน (Task Weather Modal) -->
+  <!-- Task Weather Modal -->
   <div class="modal-backdrop hidden" id="weatherModal">
-    <div class="modal">
+    <div class="modal-dialog">
       <div class="modal-header">
-        <h2>สภาพอากาศสำหรับงาน (Weather Forecast)</h2>
-        <button class="modal-close" id="closeWeatherModalBtn">&times;</button>
+        <div>
+          <h2 class="modal-title">ข้อมูลสภาพอากาศสำหรับงาน</h2>
+          <p class="modal-subtitle">เชื่อมต่อ Open-Meteo API พร้อมกลไก Fault-Tolerant Resilience</p>
+        </div>
+        <button class="btn-close" id="closeWeatherModalBtn" aria-label="ปิด">&times;</button>
       </div>
       <div class="modal-body" id="weatherModalBody">
-        <div class="loading-container">
+        <div class="state-container">
           <div class="spinner"></div>
-          <p>กำลังเชื่อมต่อ Open-Meteo Weather API...</p>
+          <p class="state-title">กำลังดึงข้อมูลสภาพอากาศ...</p>
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-outline" id="closeWeatherBtn">ปิด</button>
+        <button type="button" class="btn btn-secondary" id="closeWeatherBtn">ปิดหน้าต่าง</button>
       </div>
     </div>
   </div>
@@ -205,7 +343,8 @@
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Client Application Script -->
+  <!-- App Script -->
   <script src="app.js"></script>
 </body>
+
 </html>

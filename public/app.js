@@ -1,13 +1,16 @@
 /**
- * TaskFlow Pro — Client Application Logic (Vanilla JavaScript)
- * Calls real APIs:
- * 1. GET /api/v1/tasks (Read tasks list with query filter)
+ * TaskFlow — Client Application Logic (Vanilla JavaScript)
+ * Professional Light Theme Edition (Human-designed Minimalist SaaS)
+ *
+ * Real Endpoints:
+ * 1. GET /api/v1/tasks (Tasks list with filter & search)
  * 2. GET /api/v1/analytics/summary (Microservice Task Analytics)
- * 3. GET /api/v1/weather (Live weather integration)
+ * 3. GET /api/v1/weather (Weather integration & widget)
  * 4. POST /api/v1/tasks (Create task with client-side validation)
  * 5. PATCH /api/v1/tasks/:id/status (Quick update status)
  * 6. DELETE /api/v1/tasks/:id (Delete task)
- * 7. GET /api/v1/tasks/:id/weather (Task Weather Modal with Resilience info)
+ * 7. GET /api/v1/tasks/:id/weather (Task Weather Modal with Resilience metadata)
+ * 8. GET /api/v1/users & GET /api/v1/tags (Dynamic form options)
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -52,6 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const createTaskForm = document.getElementById("createTaskForm");
   const submitSpinner = document.getElementById("submitSpinner");
   const submitCreateBtn = document.getElementById("submitCreateBtn");
+  const taskUserId = document.getElementById("taskUserId");
+  const tagsSelector = document.getElementById("tagsSelector");
 
   // Weather Modal
   const weatherModal = document.getElementById("weatherModal");
@@ -63,22 +68,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const retryFetchBtn = document.getElementById("retryFetchBtn");
 
   // =========================================================================
-  // 1. Toast & Alert Helpers
+  // 1. Toast Notification Helpers
   // =========================================================================
 
   function showToast(message, type = "success") {
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    const icon = type === "success" ? "✓" : "⚠️";
-    toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+    const iconSvg = type === "success"
+      ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+      : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+    toast.innerHTML = `${iconSvg} <span>${escapeHtml(message)}</span>`;
     toastContainer.appendChild(toast);
 
     setTimeout(() => {
       toast.style.opacity = "0";
-      toast.style.transform = "translateX(20px)";
-      toast.style.transition = "all 0.3s ease";
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+      toast.style.transform = "translateY(8px)";
+      toast.style.transition = "all 0.25s ease";
+      setTimeout(() => toast.remove(), 250);
+    }, 3200);
   }
 
   function showAlert(msg) {
@@ -91,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // =========================================================================
-  // 2. Fetch Tasks & Analytics (GET APIs)
+  // 2. Fetch Tasks & Microservices (GET APIs)
   // =========================================================================
 
   async function loadTasks() {
@@ -113,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("[loadTasks error]", err);
       showLoading(false);
       errorState.classList.remove("hidden");
-      errorStateMessage.textContent = err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+      errorStateMessage.textContent = err.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ Express หรือ MySQL";
     }
   }
 
@@ -126,10 +133,12 @@ document.addEventListener("DOMContentLoaded", () => {
         statTotal.textContent = s.totalTasks;
         statCompleted.textContent = s.completedTasks;
         statInProgress.textContent = s.inProgressTasks;
-        statRate.textContent = `ความสำเร็จ ${s.completionRatePercent}%`;
+        statRate.textContent = `อัตราสำเร็จ ${s.completionRatePercent}%`;
+      } else {
+        updateClientAnalytics();
       }
     } catch (e) {
-      console.warn("Analytics microservice offline, using client calculation");
+      console.warn("Analytics microservice unreachable, falling back to client-side computation");
       updateClientAnalytics();
     }
   }
@@ -143,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statTotal.textContent = total;
     statCompleted.textContent = completed;
     statInProgress.textContent = inProgress;
-    statRate.textContent = `ความสำเร็จ ${rate}%`;
+    statRate.textContent = `อัตราสำเร็จ ${rate}%`;
   }
 
   async function loadWeatherWidget() {
@@ -152,12 +161,44 @@ document.addEventListener("DOMContentLoaded", () => {
       if (response.ok) {
         const result = await response.json();
         const w = result.weather;
-        weatherTemp.textContent = w.temperature_celsius ? `${w.temperature_celsius}°C` : "สำรอง (28°C)";
-        weatherDesc.textContent = w.condition || "สภาพอากาศปกติ";
+        weatherTemp.textContent = w.temperature_celsius !== null ? `${w.temperature_celsius}°C` : "29°C";
+        weatherDesc.textContent = w.condition || "ท้องฟ้าแจ่มใส";
       }
     } catch (e) {
-      weatherTemp.textContent = "28°C";
-      weatherDesc.textContent = "ท้องฟ้าปลอดโปร่ง (Default)";
+      weatherTemp.textContent = "29°C";
+      weatherDesc.textContent = "ท้องฟ้าแจ่มใส (ข้อมูลสำรอง)";
+    }
+  }
+
+  // Fetch Users & Tags to populate form dynamically
+  async function loadFormData() {
+    try {
+      const [usersRes, tagsRes] = await Promise.all([
+        fetch("/api/v1/users"),
+        fetch("/api/v1/tags")
+      ]);
+
+      if (usersRes.ok) {
+        const userData = await usersRes.json();
+        if (userData.data && userData.data.length > 0) {
+          taskUserId.innerHTML = '<option value="">-- เลือกผู้รับผิดชอบ --</option>' +
+            userData.data.map(u => `<option value="${u.id}">${escapeHtml(u.username)} (${escapeHtml(u.email)})</option>`).join("");
+        }
+      }
+
+      if (tagsRes.ok) {
+        const tagData = await tagsRes.json();
+        if (tagData.data && tagData.data.length > 0) {
+          tagsSelector.innerHTML = tagData.data.map(tag => `
+            <label class="tag-checkbox-pill">
+              <input type="checkbox" name="tag_ids" value="${tag.id}">
+              <span>${escapeHtml(tag.name)}</span>
+            </label>
+          `).join("");
+        }
+      }
+    } catch (err) {
+      console.warn("Could not load dynamic user/tag options, using defaults.");
     }
   }
 
@@ -177,7 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTasks() {
     showLoading(false);
 
-    // Apply Filter & Search
+    // Filter & Search
     let filtered = allTasks;
 
     if (currentFilter !== "all") {
@@ -206,49 +247,69 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((task) => {
         const statusThai = {
           pending: "รอดำเนินการ",
-          in_progress: "กำลังทำ",
+          in_progress: "กำลังดำเนินการ",
           completed: "เสร็จสิ้น",
           cancelled: "ยกเลิก",
         }[task.status] || task.status;
 
         const tagsHtml = (task.tags || [])
-          .map((tag) => `<span class="badge badge-tag">🏷️ ${tag}</span>`)
+          .map((tag) => `<span class="badge-tag">${escapeHtml(tag)}</span>`)
           .join("");
 
-        const formattedDate = task.due_date ? task.due_date : "ไม่ได้ระบุ";
+        const formattedDate = task.due_date ? task.due_date : "ไม่ระบุวัน";
+        const ownerName = task.owner || `User #${task.user_id}`;
+        const avatarLetter = (task.owner || "U").charAt(0).toUpperCase();
 
         return `
           <div class="task-card" data-id="${task.id}">
             <div>
               <div class="task-card-header">
-                <span class="badge badge-${task.status}">${statusThai}</span>
-                <button class="btn btn-weather" onclick="openTaskWeather(${task.id})">
-                  🌤️ ตรวจสภาพอากาศ
+                <span class="badge-status badge-${task.status}">${statusThai}</span>
+                <button class="btn btn-weather" onclick="openTaskWeather(${task.id})" title="ตรวจสอบสภาพอากาศสำหรับงานนี้">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+                  </svg>
+                  <span>สภาพอากาศ</span>
                 </button>
               </div>
+
               <h3 class="task-card-title">${escapeHtml(task.title)}</h3>
-              <p class="task-card-desc">${escapeHtml(task.description || "ไม่มีคำอธิบายเพิ่มเติม")}</p>
+              <p class="task-card-desc">${escapeHtml(task.description || "ไม่มีรายละเอียดเพิ่มเติม")}</p>
+
               ${tagsHtml ? `<div class="task-tags-row">${tagsHtml}</div>` : ""}
             </div>
 
-            <div>
+            <div class="task-card-footer">
               <div class="task-card-meta">
                 <div class="task-owner">
-                  <span class="owner-avatar">${(task.owner || "U").charAt(0).toUpperCase()}</span>
-                  <span>${escapeHtml(task.owner || "User #" + task.user_id)}</span>
+                  <span class="owner-avatar">${avatarLetter}</span>
+                  <span>${escapeHtml(ownerName)}</span>
                 </div>
-                <div>📅 ${formattedDate}</div>
+                <div class="task-due">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  <span>${formattedDate}</span>
+                </div>
               </div>
 
-              <div class="task-actions">
+              <div class="task-card-actions">
                 <select class="status-select" onchange="changeTaskStatus(${task.id}, this.value)">
                   <option value="pending" ${task.status === "pending" ? "selected" : ""}>รอดำเนินการ</option>
                   <option value="in_progress" ${task.status === "in_progress" ? "selected" : ""}>กำลังดำเนินการ</option>
                   <option value="completed" ${task.status === "completed" ? "selected" : ""}>เสร็จสิ้น</option>
                   <option value="cancelled" ${task.status === "cancelled" ? "selected" : ""}>ยกเลิก</option>
                 </select>
-                <button class="btn btn-danger-outline" onclick="deleteTask(${task.id})">
-                  🗑️ ลบ
+
+                <button class="btn btn-danger-ghost" onclick="deleteTask(${task.id})" title="ลบงานนี้">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  <span>ลบ</span>
                 </button>
               </div>
             </div>
@@ -267,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function escapeHtml(str) {
     if (!str) return "";
-    return str.replace(/[&<>"']/g, function (m) {
+    return String(str).replace(/[&<>"']/g, function (m) {
       return {
         "&": "&amp;",
         "<": "&lt;",
@@ -299,9 +360,9 @@ document.addEventListener("DOMContentLoaded", () => {
     titleInput.classList.remove("error");
     userIdInput.classList.remove("error");
 
-    // Validate Title
+    // Validate Title (at least 3 chars)
     if (!titleInput.value || titleInput.value.trim().length < 3) {
-      titleError.textContent = "กรุณาระบุชื่องานอย่างน้อย 3 ตัวอักษร";
+      titleError.textContent = "กรุณากรอกชื่องานอย่างน้อย 3 ตัวอักษร";
       titleInput.classList.add("error");
       isValid = false;
     }
@@ -313,7 +374,7 @@ document.addEventListener("DOMContentLoaded", () => {
       isValid = false;
     }
 
-    // Validate Due Date (Optional but if entered, must be valid)
+    // Validate Due Date
     if (dueDateInput.value) {
       const selectedDate = new Date(dueDateInput.value);
       if (isNaN(selectedDate.getTime())) {
@@ -403,7 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
       updateCounters();
       updateClientAnalytics();
-      showToast(`เปลี่ยนสถานะงานเป็น "${newStatus}" สำเร็จ`, "success");
+      showToast(`เปลี่ยนสถานะงานเรียบร้อยแล้ว`, "success");
     } catch (err) {
       console.error("[changeTaskStatus error]", err);
       showToast(err.message, "error");
@@ -430,7 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
       updateCounters();
       updateClientAnalytics();
-      showToast(`ลบงานรหัส #${taskId} เรียบร้อยแล้ว`, "success");
+      showToast(`ลบงานรหัส #${taskId} สำเร็จ`, "success");
     } catch (err) {
       console.error("[deleteTask error]", err);
       showToast(err.message, "error");
@@ -438,15 +499,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // =========================================================================
-  // 6. Task Weather Modal (External Integration & Resilience)
+  // 6. Task Weather Modal (Resilience & Simulation)
   // =========================================================================
 
   window.openTaskWeather = async function (taskId) {
     weatherModal.classList.remove("hidden");
     weatherModalBody.innerHTML = `
-      <div class="loading-container">
+      <div class="state-container">
         <div class="spinner"></div>
-        <p>กำลังเชื่อมต่อ Open-Meteo Weather API พร้อมระบบ Resilience (Retry & Fallback)...</p>
+        <p class="state-title">กำลังเชื่อมต่อ Open-Meteo Weather API...</p>
+        <p class="state-desc">พร้อมระบบ Resilience (Timeout 3s, Retry 2 ครั้ง, Fallback)</p>
       </div>
     `;
 
@@ -454,43 +516,82 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch(`/api/v1/tasks/${taskId}/weather`);
       const data = await response.json();
 
-      const w = data.weather;
+      const w = data.weather || {};
       const meta = data.resilienceMeta || {};
       const isFallback = data.isFallback;
 
       weatherModalBody.innerHTML = `
-        <div class="weather-detail-box">
-          <div class="weather-detail-header">
+        <div class="weather-card-dialog">
+          <div class="weather-header-row">
             <div>
-              <div style="font-size: 0.85rem; color: var(--text-dim);">สถานที่พยากรณ์: ${data.location?.city || "Bangkok"}</div>
-              <div style="font-size: 1.15rem; font-weight: 600; color: #fff;">${w.condition || "สภาพอากาศ"}</div>
+              <span class="weather-city-label">พยากรณ์สำหรับพื้นที่: ${escapeHtml(data.location?.city || "Bangkok")}</span>
+              <div class="weather-cond-main">${escapeHtml(w.condition || "สภาพอากาศปกติ")}</div>
             </div>
-            <div class="weather-temp-large">${w.temperature_celsius !== null ? w.temperature_celsius + "°C" : "N/A"}</div>
+            <div class="weather-temp-badge">
+              ${w.temperature_celsius !== null ? w.temperature_celsius + "°C" : "N/A"}
+            </div>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
-            <div>💨 ความเร็วลม: ${w.windspeed_kmh !== null ? w.windspeed_kmh + " km/h" : "-"}</div>
-            <div>🌤️ กิจกรรมกลางแจ้ง: ${w.is_outdoor_suitable ? "✅ เหมาะสม" : "⚠️ ควรงด"}</div>
+          <div class="weather-stats-subgrid">
+            <div class="weather-stat-item">
+              <div class="weather-stat-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg>
+                <span>ความเร็วลม</span>
+              </div>
+              <div class="weather-stat-val">${w.windspeed_kmh !== null ? w.windspeed_kmh + " km/h" : "-"}</div>
+            </div>
+            <div class="weather-stat-item">
+              <div class="weather-stat-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                <span>กิจกรรมกลางแจ้ง</span>
+              </div>
+              <div class="weather-stat-val">
+                ${w.is_outdoor_suitable ? '<span class="pill-status pill-suitable">เหมาะสม</span>' : '<span class="pill-status pill-caution">ควรงด</span>'}
+              </div>
+            </div>
           </div>
 
-          <div class="weather-advice-box">
-            💡 <strong>คำแนะนำสำหรับงาน:</strong> ${w.recommendation || "วางแผนการทำงานตามปกติ"}
+          <div class="weather-recommendation">
+            <div class="recommendation-header">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+              <span>คำแนะนำสำหรับการทำงาน</span>
+            </div>
+            <div class="recommendation-text">${escapeHtml(w.recommendation || "สามารถวางแผนการทำงานได้ตามปกติ")}</div>
           </div>
 
-          <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-dim); border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.5rem;">
-            <div><strong>สถาปัตยกรรม Resilience:</strong></div>
-            <div>• Provider: ${meta.provider || "Open-Meteo API"}</div>
-            <div>• Attempts Made: ${meta.attemptsMade || 1} ครั้ง (Max Retries: ${meta.maxRetries || 2})</div>
-            <div>• Timeout Limit: ${meta.timeoutMs || 3000} ms</div>
-            <div>• สถานะ Fallback: ${isFallback ? '<span style="color:#fbbf24;">เปิดใช้งาน (Fallback Strategy Active)</span>' : '<span style="color:#34d399;">ข้อมูลสดจาก API จริง</span>'}</div>
-            ${meta.errorReason ? `<div style="color:#f87171;">• รายละเอียดข้อผิดพลาด: ${meta.errorReason}</div>` : ""}
+          <div class="resilience-meta-box">
+            <div class="resilience-meta-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>ข้อมูลการทำงานของระบบ Resilience</span>
+            </div>
+            <div class="resilience-meta-row">
+              <span>Service Provider:</span>
+              <strong>${escapeHtml(meta.provider || "Open-Meteo API")}</strong>
+            </div>
+            <div class="resilience-meta-row">
+              <span>Attempts Executed:</span>
+              <strong>${meta.attemptsMade || 1} ครั้ง (โควตา Max Retries: ${meta.maxRetries || 2})</strong>
+            </div>
+            <div class="resilience-meta-row">
+              <span>Timeout Threshold:</span>
+              <strong>${meta.timeoutMs || 3000} ms (AbortController)</strong>
+            </div>
+            <div class="resilience-meta-row">
+              <span>สถานะ Fallback:</span>
+              <strong>${isFallback ? '<span style="color:#d97706;">เปิดใช้งาน (Fallback Strategy Active)</span>' : '<span style="color:#16a34a;">สำเร็จจาก API จริง (Live API Data)</span>'}</strong>
+            </div>
+            ${meta.errorReason ? `<div class="resilience-meta-row"><span style="color:#dc2626;">Error Cause:</span><span style="color:#dc2626;">${escapeHtml(meta.errorReason)}</span></div>` : ""}
           </div>
         </div>
       `;
     } catch (err) {
       weatherModalBody.innerHTML = `
-        <div class="empty-state">
-          <p style="color: var(--danger);">เกิดข้อผิดพลาดในการโหลดสภาพอากาศ: ${err.message}</p>
+        <div class="state-container">
+          <div class="state-icon-circle state-icon-red">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h3 class="state-title">ไม่สามารถดึงข้อมูลสภาพอากาศได้</h3>
+          <p class="state-desc">${escapeHtml(err.message)}</p>
         </div>
       `;
     }
@@ -545,4 +646,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================================================================
   loadTasks();
   loadWeatherWidget();
+  loadFormData();
 });
