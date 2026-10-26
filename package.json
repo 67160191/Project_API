@@ -1,16 +1,26 @@
 {
-  "name": "project",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "project-phase3-67160191",
+  "version": "3.0.0",
+  "description": "TaskFlow Pro - Unified Task Management System (Phase 3 Final Integration & Microservices)",
+  "main": "src/index.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
+    "start": "node src/index.js",
+    "start:root": "node index.js",
+    "dev": "nodemon src/index.js",
     "test": "jest --coverage --detectOpenHandles --forceExit",
+    "test:resilience": "node test-resilience.js",
+    "pack": "node scripts/pack-phase3.js",
     "migrate": "node scripts/migrate.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "task-management",
+    "express",
+    "swagger",
+    "openapi",
+    "resilience",
+    "microservices"
+  ],
+  "author": "67160191",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
@@ -24,5 +34,14 @@
     "jest": "^30.5.2",
     "nodemon": "^3.1.14",
     "supertest": "^7.3.1"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/project-phase3-"
+    ]
   }
 }

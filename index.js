@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const fs = require("fs");
 const express = require("express");
 const path = require("path");
 const swaggerUi = require("swagger-ui-express");
@@ -16,10 +17,37 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // ให้บริการ Static Files สำหรับ Client-Facing Frontend (Phase 3: CLO6)
-app.use(express.static(path.join(__dirname, "public"), { index: false }));
+const staticDirs = [
+  path.join(__dirname, "frontend"),
+  path.join(__dirname, "../frontend"),
+  path.join(__dirname, "public"),
+  path.join(__dirname, "../public"),
+  path.join(process.cwd(), "frontend"),
+  path.join(process.cwd(), "public"),
+];
+
+staticDirs.forEach((dir) => {
+  if (fs.existsSync(dir)) {
+    app.use(express.static(dir, { index: false }));
+  }
+});
+
+function getIndexHtmlPath() {
+  for (const dir of staticDirs) {
+    const file = path.join(dir, "index.html");
+    if (fs.existsSync(file)) return file;
+  }
+  return path.join(__dirname, "public", "index.html");
+}
 
 // โหลดไฟล์ OpenAPI Specification สำหรับ Swagger UI
-const swaggerDocument = YAML.load(path.join(__dirname, "openapi.yaml"));
+const openapiPath = fs.existsSync(path.join(__dirname, "openapi.yaml"))
+  ? path.join(__dirname, "openapi.yaml")
+  : fs.existsSync(path.join(__dirname, "../openapi.yaml"))
+  ? path.join(__dirname, "../openapi.yaml")
+  : path.join(process.cwd(), "openapi.yaml");
+
+const swaggerDocument = YAML.load(openapiPath);
 
 // -------------------------------------------------------------
 // ส่วนที่ 1: Docs / DX - Swagger UI & OpenAPI Endpoints
@@ -43,14 +71,14 @@ app.get("/api-docs.json", (req, res) => {
 
 // หน้าแอปพลิเคชัน Frontend หลัก (Client-Facing Frontend)
 app.get("/app", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(getIndexHtmlPath());
 });
 
 // หน้า Root: ตรวจสอบ Accept header หากเป็น Browser ให้ไปหน้าแอปพลิเคชัน Frontend หากเป็น API ให้ตอบ JSON
 app.get("/", (req, res) => {
   const acceptHeader = req.headers.accept || "";
   if (acceptHeader.includes("text/html") && !req.query.json) {
-    return res.sendFile(path.join(__dirname, "public", "index.html"));
+    return res.sendFile(getIndexHtmlPath());
   }
 
   res.status(200).json({

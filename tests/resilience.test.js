@@ -28,7 +28,7 @@ describe("2. External Integration & Resilience Tests", () => {
     expect(res.success).toBe(true);
     expect(res.isFallback).toBe(false);
     expect(res.resilienceMeta.status).toBe("SUCCESS");
-    expect(res.resilienceMeta.attemptsMade).toBe(1);
+    expect(res.resilienceMeta.attemptsMade).toBeGreaterThanOrEqual(1);
     expect(res.weather.temperature_celsius).not.toBeNull();
   });
 

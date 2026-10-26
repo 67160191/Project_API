@@ -1,0 +1,1171 @@
+{
+  "info": {
+    "_postman_id": "a5d89231-6716-0191-b348-7e1892fcb821",
+    "name": "Task Management API - Phase 3 (Final Integration)",
+    "description": "Postman Collection สำหรับโครงงานระยะที่ 3: Final Integration & Microservices รหัสนิสิต 67160191 ครอบคลุมทุก Endpoint รวมถึงโมดูล Microservices จากสัปดาห์ที่ 13",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Tasks Resource",
+      "item": [
+        {
+          "name": "GET All Tasks (รายการงานทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks?status=in_progress",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "in_progress",
+                  "description": "กรองตามสถานะ: pending, in_progress, completed, cancelled"
+                },
+                {
+                  "key": "user_id",
+                  "value": "1",
+                  "disabled": true,
+                  "description": "กรองตาม user_id"
+                }
+              ]
+            },
+            "description": "ดึงรายการงานทั้งหมดในระบบ สามารถกรองตาม status หรือ user_id ได้"
+          },
+          "response": [
+            {
+              "name": "200 OK - All Tasks List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"total\": 3,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"title\": \"ทำรายงานสรุปประจำเดือน\",\n      \"description\": \"สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า\",\n      \"due_date\": \"2026-08-31\",\n      \"status\": \"in_progress\",\n      \"user_id\": 1,\n      \"owner\": \"somchai\",\n      \"tags\": [\"Work\", \"Urgent\"]\n    },\n    {\n      \"id\": 2,\n      \"title\": \"ซื้อของเข้าบ้าน\",\n      \"description\": \"ซื้อนม ไข่ และขนมปังสำหรับสัปดาห์นี้\",\n      \"due_date\": \"2026-08-23\",\n      \"status\": \"pending\",\n      \"user_id\": 2,\n      \"owner\": \"somsri\",\n      \"tags\": [\"Personal\"]\n    },\n    {\n      \"id\": 3,\n      \"title\": \"เตรียมพรีเซนต์โปรเจกต์\",\n      \"description\": \"ทำสไลด์สำหรับประชุมทีมเช้าวันจันทร์\",\n      \"due_date\": \"2026-08-25\",\n      \"status\": \"pending\",\n      \"user_id\": 3,\n      \"owner\": \"mana\",\n      \"tags\": [\"Work\", \"Urgent\"]\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Task by ID (ดูรายละเอียดงานตาม ID)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1"
+              ]
+            },
+            "description": "ดึงข้อมูลงาน 1 รายการโดยละเอียด พร้อมข้อมูลเจ้าของและป้ายกำกับ"
+          },
+          "response": [
+            {
+              "name": "200 OK - Task Detail Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน\",\n    \"description\": \"สรุปยอดขายและค่าใช้จ่ายของเดือนนี้ส่งหัวหน้า\",\n    \"due_date\": \"2026-08-31\",\n    \"status\": \"in_progress\",\n    \"user_id\": 1,\n    \"created_at\": \"2026-08-20T08:30:00.000Z\",\n    \"owner\": \"somchai\",\n    \"owner_email\": \"somchai@example.com\",\n    \"tags\": [\n      { \"id\": 1, \"name\": \"Work\" },\n      { \"id\": 3, \"name\": \"Urgent\" }\n    ]\n  }\n}"
+            },
+            {
+              "name": "404 Not Found - Task Does Not Exist",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"NOT_FOUND\",\n    \"message\": \"ไม่พบงานรหัส 999 ในระบบ\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Create Task (สร้างงานใหม่)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ทำแบบทดสอบและส่งเอกสาร Phase 2\",\n  \"description\": \"ตรวจสอบเอกสาร OpenAPI, Swagger UI และ Postman Collection ให้เรียบร้อย\",\n  \"due_date\": \"2026-08-30\",\n  \"status\": \"pending\",\n  \"user_id\": 1,\n  \"tag_ids\": [1, 3]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks"
+              ]
+            },
+            "description": "สร้างงานใหม่เข้าสู่ระบบ พร้อมกำหนดป้ายกำกับ"
+          },
+          "response": [
+            {
+              "name": "201 Created - Task Successfully Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"ทำแบบทดสอบและส่งเอกสาร Phase 2\",\n  \"description\": \"ตรวจสอบเอกสาร OpenAPI, Swagger UI และ Postman Collection ให้เรียบร้อย\",\n  \"due_date\": \"2026-08-30\",\n  \"status\": \"pending\",\n  \"user_id\": 1,\n  \"tag_ids\": [1, 3]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"สร้างงานใหม่สำเร็จ\",\n  \"data\": {\n    \"id\": 5,\n    \"title\": \"ทำแบบทดสอบและส่งเอกสาร Phase 2\",\n    \"description\": \"ตรวจสอบเอกสาร OpenAPI, Swagger UI และ Postman Collection ให้เรียบร้อย\",\n    \"due_date\": \"2026-08-30\",\n    \"status\": \"pending\",\n    \"user_id\": 1,\n    \"owner\": \"somchai\",\n    \"tag_ids\": [1, 3]\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Missing Title",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"ไม่มี title\",\n  \"user_id\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"VALIDATION_ERROR\",\n    \"message\": \"ต้องระบุชื่อหัวข้องาน (title)\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT Update Task (แก้ไขข้อมูลงานทั้งหมด)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"ทำรายงานสรุปประจำเดือน (ฉบับแก้ไข)\",\n  \"description\": \"อัปเดตข้อมูลตัวเลขไตรมาสที่ 3 เรียบร้อยแล้ว\",\n  \"due_date\": \"2026-08-31\",\n  \"status\": \"in_progress\",\n  \"user_id\": 1,\n  \"tag_ids\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1"
+              ]
+            },
+            "description": "แก้ไขข้อมูลงานเดิมตาม ID"
+          },
+          "response": [
+            {
+              "name": "200 OK - Task Updated Successfully",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"ทำรายงานสรุปประจำเดือน (ฉบับแก้ไข)\",\n  \"description\": \"อัปเดตข้อมูลตัวเลขไตรมาสที่ 3 เรียบร้อยแล้ว\",\n  \"due_date\": \"2026-08-31\",\n  \"status\": \"in_progress\",\n  \"user_id\": 1,\n  \"tag_ids\": [1, 2]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"แก้ไขข้อมูลงานสำเร็จ\",\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน (ฉบับแก้ไข)\",\n    \"description\": \"อัปเดตข้อมูลตัวเลขไตรมาสที่ 3 เรียบร้อยแล้ว\",\n    \"due_date\": \"2026-08-31\",\n    \"status\": \"in_progress\",\n    \"user_id\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "PATCH Update Task Status (เปลี่ยนสถานะงาน)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1",
+                "status"
+              ]
+            },
+            "description": "อัปเดตเฉพาะสถานะของงาน เช่น pending -> completed"
+          },
+          "response": [
+            {
+              "name": "200 OK - Status Updated to completed",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"completed\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "status"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"อัปเดตสถานะงานเป็น 'completed' สำเร็จ\",\n  \"data\": {\n    \"id\": 1,\n    \"status\": \"completed\"\n  }\n}"
+            },
+            {
+              "name": "400 Bad Request - Invalid Status Value",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"invalid_status_xyz\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "status"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"INVALID_STATUS\",\n    \"message\": \"ค่า status ไม่ถูกต้อง ต้องเป็นหนึ่งใน: pending, in_progress, completed, cancelled\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE Task (ลบงาน)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1"
+              ]
+            },
+            "description": "ลบงานตาม ID ที่ระบุ"
+          },
+          "response": [
+            {
+              "name": "200 OK - Task Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"ลบงานรหัส 1 เรียบร้อยแล้ว\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. External API Integration & Resilience",
+      "item": [
+        {
+          "name": "Scenario 1: Happy Path (ดึงสภาพอากาศจริง สำเร็จ)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1/weather",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1",
+                "weather"
+              ]
+            },
+            "description": "ทดสอบเชื่อมต่อ Open-Meteo Weather API จริงแบบปกติ คาดหวังการตอบกลับสำเร็จครั้งแรก (Attempt 1)"
+          },
+          "response": [
+            {
+              "name": "200 OK - Weather Success (Real API)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/weather",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "weather"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"isFallback\": false,\n  \"message\": \"ดึงข้อมูลสภาพอากาศจากผู้ให้บริการภายนอกสำเร็จ\",\n  \"taskId\": 1,\n  \"location\": {\n    \"city\": \"Bangkok\",\n    \"latitude\": 13.75,\n    \"longitude\": 100.51,\n    \"timezone\": \"Asia/Bangkok\"\n  },\n  \"weather\": {\n    \"status\": \"AVAILABLE\",\n    \"condition\": \"มีเมฆเป็นบางส่วน (Partly Cloudy)\",\n    \"weather_code\": 2,\n    \"temperature_celsius\": 28.3,\n    \"windspeed_kmh\": 4.0,\n    \"wind_direction\": 172,\n    \"is_day\": false,\n    \"recommendation\": \"สภาพอากาศแจ่มใส มีเมฆบางตา เหมาะสำหรับทำงานทั่วไป\",\n    \"is_outdoor_suitable\": true,\n    \"observation_time\": \"2026-10-24T16:30\"\n  },\n  \"resilienceMeta\": {\n    \"provider\": \"Open-Meteo API\",\n    \"status\": \"SUCCESS\",\n    \"attemptsMade\": 1,\n    \"maxRetries\": 2,\n    \"timeoutMs\": 3000,\n    \"retried\": false,\n    \"timestamp\": \"2026-10-24T16:47:00.000Z\"\n  },\n  \"taskInfo\": {\n    \"taskId\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน\",\n    \"due_date\": \"2026-08-31\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Scenario 2: Failure Simulation - Network Error (Retry & Fallback)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=network",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1",
+                "weather"
+              ],
+              "query": [
+                {
+                  "key": "mockFailure",
+                  "value": "network",
+                  "description": "จำลอง Network Error"
+                }
+              ]
+            },
+            "description": "จำลองข้อผิดพลาด Network Unreachable -> ระบบ Retry 2 ครั้ง (รวม 3 attempts) พร้อม Exponential Backoff -> ส่ง Fallback ป้องกันระบบ Crash"
+          },
+          "response": [
+            {
+              "name": "200 OK - Graceful Fallback on Network Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=network",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "weather"
+                  ],
+                  "query": [
+                    {
+                      "key": "mockFailure",
+                      "value": "network"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"isFallback\": true,\n  \"message\": \"ไม่สามารถเชื่อมต่อบริการสภาพอากาศภายนอกได้ในขณะนี้ ระบบใช้ข้อมูลประมาณการสำรอง (Fallback Strategy)\",\n  \"taskId\": 1,\n  \"location\": {\n    \"city\": \"Bangkok\",\n    \"latitude\": 13.75,\n    \"longitude\": 100.51\n  },\n  \"weather\": {\n    \"status\": \"UNAVAILABLE\",\n    \"condition\": \"ข้อมูลสภาพอากาศชั่วคราว (Fallback Data)\",\n    \"temperature_celsius\": null,\n    \"windspeed_kmh\": null,\n    \"weather_code\": null,\n    \"recommendation\": \"ระบบไม่สามารถติดต่อ Weather API ภายนอกได้ แนะนำให้ตรวจสอบสภาพอากาศจากแอปพลิเคชันพยากรณ์อากาศก่อนเริ่มงานกลางแจ้ง\",\n    \"is_outdoor_suitable\": true\n  },\n  \"resilienceMeta\": {\n    \"provider\": \"Open-Meteo API\",\n    \"status\": \"FAILED_AFTER_RETRIES\",\n    \"attemptsMade\": 3,\n    \"maxRetries\": 2,\n    \"timeoutMs\": 3000,\n    \"errorReason\": \"fetch failed\",\n    \"fallbackTimestamp\": \"2026-10-24T16:47:02.000Z\"\n  },\n  \"taskInfo\": {\n    \"taskId\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน\",\n    \"due_date\": \"2026-08-31\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Scenario 3: Failure Simulation - Timeout Exceeded (Retry & Fallback)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=timeout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1",
+                "weather"
+              ],
+              "query": [
+                {
+                  "key": "mockFailure",
+                  "value": "timeout",
+                  "description": "จำลอง Request เกินเวลา 3000ms"
+                }
+              ]
+            },
+            "description": "จำลองผู้ให้บริการค้างหรือช้าเกิน 3000ms -> AbortController ตัดคำขอ -> Retry 2 ครั้ง -> Fallback ตอบกลับอย่างนุ่มนวล"
+          },
+          "response": [
+            {
+              "name": "200 OK - Graceful Fallback on Timeout",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=timeout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "weather"
+                  ],
+                  "query": [
+                    {
+                      "key": "mockFailure",
+                      "value": "timeout"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"isFallback\": true,\n  \"message\": \"ไม่สามารถเชื่อมต่อบริการสภาพอากาศภายนอกได้ในขณะนี้ ระบบใช้ข้อมูลประมาณการสำรอง (Fallback Strategy)\",\n  \"taskId\": 1,\n  \"location\": {\n    \"city\": \"Bangkok\",\n    \"latitude\": 13.75,\n    \"longitude\": 100.51\n  },\n  \"weather\": {\n    \"status\": \"UNAVAILABLE\",\n    \"condition\": \"ข้อมูลสภาพอากาศชั่วคราว (Fallback Data)\",\n    \"temperature_celsius\": null,\n    \"windspeed_kmh\": null,\n    \"weather_code\": null,\n    \"recommendation\": \"ระบบไม่สามารถติดต่อ Weather API ภายนอกได้ แนะนำให้ตรวจสอบสภาพอากาศจากแอปพลิเคชันพยากรณ์อากาศก่อนเริ่มงานกลางแจ้ง\",\n    \"is_outdoor_suitable\": true\n  },\n  \"resilienceMeta\": {\n    \"provider\": \"Open-Meteo API\",\n    \"status\": \"FAILED_AFTER_RETRIES\",\n    \"attemptsMade\": 3,\n    \"maxRetries\": 2,\n    \"timeoutMs\": 3000,\n    \"errorReason\": \"Request timeout เกินเวลาที่กำหนด (3000ms)\",\n    \"fallbackTimestamp\": \"2026-10-24T16:47:11.000Z\"\n  },\n  \"taskInfo\": {\n    \"taskId\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน\",\n    \"due_date\": \"2026-08-31\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Scenario 4: Failure Simulation - 500 Server Error (Retry & Fallback)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tasks",
+                "1",
+                "weather"
+              ],
+              "query": [
+                {
+                  "key": "mockFailure",
+                  "value": "500",
+                  "description": "จำลองภายนอกส่งรหัส 500"
+                }
+              ]
+            },
+            "description": "จำลองผู้ให้บริการภายนอกคืน HTTP 500 -> ระบบ Retry อัตโนมัติ 2 ครั้ง -> Fallback ตอบกลับอย่างถูกต้อง"
+          },
+          "response": [
+            {
+              "name": "200 OK - Graceful Fallback on 500 Error",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tasks/1/weather?mockFailure=500",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tasks",
+                    "1",
+                    "weather"
+                  ],
+                  "query": [
+                    {
+                      "key": "mockFailure",
+                      "value": "500"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"isFallback\": true,\n  \"message\": \"ไม่สามารถเชื่อมต่อบริการสภาพอากาศภายนอกได้ในขณะนี้ ระบบใช้ข้อมูลประมาณการสำรอง (Fallback Strategy)\",\n  \"taskId\": 1,\n  \"location\": {\n    \"city\": \"Bangkok\",\n    \"latitude\": 13.75,\n    \"longitude\": 100.51\n  },\n  \"weather\": {\n    \"status\": \"UNAVAILABLE\",\n    \"condition\": \"ข้อมูลสภาพอากาศชั่วคราว (Fallback Data)\",\n    \"temperature_celsius\": null,\n    \"windspeed_kmh\": null,\n    \"weather_code\": null,\n    \"recommendation\": \"ระบบไม่สามารถติดต่อ Weather API ภายนอกได้ แนะนำให้ตรวจสอบสภาพอากาศจากแอปพลิเคชันพยากรณ์อากาศก่อนเริ่มงานกลางแจ้ง\",\n    \"is_outdoor_suitable\": true\n  },\n  \"resilienceMeta\": {\n    \"provider\": \"Open-Meteo API\",\n    \"status\": \"FAILED_AFTER_RETRIES\",\n    \"attemptsMade\": 3,\n    \"maxRetries\": 2,\n    \"timeoutMs\": 3000,\n    \"errorReason\": \"External API ตอบกลับด้วยรหัสข้อผิดพลาด HTTP 500 (INTERNAL SERVER ERROR)\",\n    \"fallbackTimestamp\": \"2026-10-24T16:47:15.000Z\"\n  },\n  \"taskInfo\": {\n    \"taskId\": 1,\n    \"title\": \"ทำรายงานสรุปประจำเดือน\",\n    \"due_date\": \"2026-08-31\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Microservices (Week 13)",
+      "item": [
+        {
+          "name": "GET Tasks Analytics Summary (สรุปสถิติงาน)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/analytics/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "analytics",
+                "summary"
+              ]
+            },
+            "description": "ดึงข้อมูลสรุปสถิติงาน อัตราสำเร็จ และการกระจายงานจาก Analytics Microservice"
+          },
+          "response": [
+            {
+              "name": "200 OK - Analytics Summary",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"summary\": {\n    \"totalTasks\": 4,\n    \"completedTasks\": 1,\n    \"pendingTasks\": 2,\n    \"inProgressTasks\": 1,\n    \"cancelledTasks\": 0,\n    \"overdueTasks\": 0,\n    \"completionRatePercent\": 25\n  },\n  \"performanceScore\": \"Needs Attention\",\n  \"generatedAt\": \"2026-10-25T00:00:00.000Z\",\n  \"microserviceVersion\": \"1.2.0\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Send Notification (ส่งแจ้งเตือนผ่าน Microservice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": 1,\n  \"recipient\": \"somchai@example.com\",\n  \"channel\": \"email\",\n  \"subject\": \"แจ้งเตือนงาน: ทำรายงานสรุปประจำเดือน\",\n  \"message\": \"งานของคุณมีกำหนดส่งในวันที่ 2026-08-31\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/send",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "send"
+              ]
+            },
+            "description": "ส่งการแจ้งเตือนสำหรับงานผ่าน Notification Microservice"
+          },
+          "response": [
+            {
+              "name": "201 Created - Notification Dispatched",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"ส่งการแจ้งเตือนผ่าน Notification Microservice สำเร็จ\",\n  \"data\": {\n    \"id\": \"notif-1730000000-123\",\n    \"taskId\": 1,\n    \"recipient\": \"somchai@example.com\",\n    \"channel\": \"email\",\n    \"subject\": \"แจ้งเตือนงาน: ทำรายงานสรุปประจำเดือน\",\n    \"message\": \"งานของคุณมีกำหนดส่งในวันที่ 2026-08-31\",\n    \"priority\": \"high\",\n    \"status\": \"DELIVERED\",\n    \"sentAt\": \"2026-10-25T00:00:00.000Z\",\n    \"deliveryDurationMs\": 62\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET Notification Logs (ดึงประวัติการส่งแจ้งเตือน)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/notifications/logs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "notifications",
+                "logs"
+              ]
+            },
+            "description": "ดึงรายการบันทึกประวัติการส่งแจ้งเตือนทั้งหมด"
+          },
+          "response": [
+            {
+              "name": "200 OK - Notification Logs List",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"total\": 2,\n  \"data\": [\n    {\n      \"id\": \"notif-001\",\n      \"taskId\": 1,\n      \"recipient\": \"somchai@example.com\",\n      \"channel\": \"email\",\n      \"status\": \"DELIVERED\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Users Resource",
+      "item": [
+        {
+          "name": "GET All Users (รายชื่อผู้ใช้งานทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "description": "ดึงรายชื่อผู้ใช้ทั้งหมดในระบบ"
+          },
+          "response": [
+            {
+              "name": "200 OK - Users List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/users",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "users"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"total\": 3,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"username\": \"somchai\",\n      \"email\": \"somchai@example.com\",\n      \"created_at\": \"2026-08-20T08:00:00.000Z\"\n    },\n    {\n      \"id\": 2,\n      \"username\": \"somsri\",\n      \"email\": \"somsri@example.com\",\n      \"created_at\": \"2026-08-20T08:05:00.000Z\"\n    },\n    {\n      \"id\": 3,\n      \"username\": \"mana\",\n      \"email\": \"mana@example.com\",\n      \"created_at\": \"2026-08-20T08:10:00.000Z\"\n    }\n  ]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Tags Resource",
+      "item": [
+        {
+          "name": "GET All Tags (รายการป้ายกำกับทั้งหมด)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tags"
+              ]
+            },
+            "description": "ดึงรายการป้ายกำกับทั้งหมด"
+          },
+          "response": [
+            {
+              "name": "200 OK - Tags List",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tags",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tags"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"total\": 3,\n  \"data\": [\n    { \"id\": 1, \"name\": \"Work\" },\n    { \"id\": 2, \"name\": \"Personal\" },\n    { \"id\": 3, \"name\": \"Urgent\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST Create Tag (สร้างป้ายกำกับใหม่)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Study\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tags",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "tags"
+              ]
+            },
+            "description": "สร้างป้ายกำกับใหม่สำหรับหมวดหมู่งาน"
+          },
+          "response": [
+            {
+              "name": "201 Created - Tag Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Study\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/tags",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "tags"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"สร้างป้ายกำกับใหม่สำเร็จ\",\n  \"data\": {\n    \"id\": 4,\n    \"name\": \"Study\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. System & Documentation",
+      "item": [
+        {
+          "name": "GET API Root (ตรวจสอบสถานะระบบ)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "ตรวจสอบสถานะ API และรับลิงก์ Swagger UI"
+          },
+          "response": [
+            {
+              "name": "200 OK - API Root",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    ""
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json; charset=utf-8"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Tasks Management API (Phase 2: Docs/DX & Integration) is running\",\n  \"version\": \"2.0.0\",\n  \"documentation\": \"http://localhost:3000/api-docs\",\n  \"endpoints\": {\n    \"tasks\": \"/api/v1/tasks\",\n    \"users\": \"/api/v1/users\",\n    \"tags\": \"/api/v1/tags\",\n    \"weather_integration\": \"/api/v1/tasks/:id/weather\",\n    \"swagger_ui\": \"/api-docs\",\n    \"openapi_spec\": \"/api-docs.json\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "GET OpenAPI Specification JSON",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api-docs.json",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api-docs.json"
+              ]
+            },
+            "description": "ดึงเอกสาร OpenAPI 3.0.3 รูปแบบ JSON สำหรับนำเข้าเครื่องมือต่างๆ"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
